@@ -52,9 +52,10 @@
   position: absolute;
   top: -1.5rem;
   right: 50%;
-  width: 2px;
+  width: 3px;
   height: 1.5rem;
-  background: rgba(15, 106, 74, 0.3);
+  background: #0F6A4A;
+  transform: translateX(50%);
 }
 
 .org-children { position: relative; }
@@ -65,8 +66,8 @@
   top: 0;
   right: calc(50% - (var(--child-w, 220px) / 2));
   left: calc(50% - (var(--child-w, 220px) / 2));
-  height: 2px;
-  background: rgba(15, 106, 74, 0.3);
+  height: 3px;
+  background: #0F6A4A;
 }
 
 .org-children > .org-node:first-child[data-has-parent="true"]::after {
@@ -74,9 +75,9 @@
   position: absolute;
   top: -1.5rem;
   right: 50%;
-  width: 2px;
+  width: 3px;
   height: 1.5rem;
-  background: rgba(15, 106, 74, 0.3);
+  background: #0F6A4A;
   transform: translateX(50%);
 }
 
@@ -85,7 +86,7 @@
   left: 0;
   width: auto;
   height: 1.5rem;
-  background: rgba(15, 106, 74, 0.3);
+  background: #0F6A4A;
 }
 
 .org-node[data-highlight="true"] > .org-card {
