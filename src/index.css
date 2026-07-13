@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { @apply bg-ivory text-ink font-sans antialiased; -webkit-font-smoothing: antialiased; }
+  ::selection { @apply bg-gold-soft text-emerald-deep; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-emerald/20 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-emerald/35; }
+}
+
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+  .skeleton {
+    background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 75%);
+    background-size: 1000px 100%;
+    @apply animate-shimmer rounded-lg;
+  }
+  .input-field {
+    @apply w-full rounded-xl border border-emerald/15 bg-white/80 px-4 py-2.5 text-sm text-ink
+      placeholder:text-mutedLight transition-all outline-none
+      focus:border-emerald focus:ring-2 focus:ring-emerald/15;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-emerald px-5 py-2.5 text-sm font-medium text-white
+      shadow-soft transition-all hover:bg-emerald-deep hover:shadow-card active:scale-[0.98]
+      disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-emerald/20 bg-white/60 px-4 py-2.5 text-sm font-medium text-emerald-deep
+      transition-all hover:bg-emerald-soft hover:border-emerald/40 active:scale-[0.98];
+  }
+}
+
+.pattern-bg {
+  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%230F6A4A' stroke-width='1' stroke-opacity='0.04'%3E%3Cpath d='M40 0 L80 40 L40 80 L0 40 Z'/%3E%3Cpath d='M40 10 L70 40 L40 70 L10 40 Z'/%3E%3Ccircle cx='40' cy='40' r='8'/%3E%3C/g%3E%3C/svg%3E");
+}
