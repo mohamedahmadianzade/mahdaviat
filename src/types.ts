@@ -85,3 +85,75 @@ export const defaultSettings: StoreSettings = {
 // ─── Auth types ───────────────────────────────────────────────────────────────
 
 export interface AdminCredentials { username: string; password: string; }
+
+// ─── Organization types ──────────────────────────────────────────────────────
+
+export type ManagementLevel = 'executive' | 'deputy' | 'department' | 'unit' | 'staff';
+
+export interface OrgUnit {
+  id: string;
+  name: string;
+  parentId: string | null;
+  order: number;
+  active: boolean;
+}
+
+export interface OrgMember {
+  id: string;
+  parentId: string | null;
+  name: string;
+  position: string;
+  department: string;
+  unitId: string;
+  managementLevel: ManagementLevel;
+  image: string;
+  bio: string;
+  responsibilities: string[];
+  education: string[];
+  experience: string[];
+  skills: string[];
+  researchAreas: string[];
+  publications: string[];
+  projects: string[];
+  certificates: string[];
+  awards: string[];
+  phone: string;
+  email: string;
+  office: string;
+  socialLinks: { label: string; url: string }[];
+  gallery: string[];
+  documents: string[];
+  order: number;
+  active: boolean;
+}
+
+export interface OrgSearchFilters {
+  query: string;
+  department: string;
+  managementLevel: string;
+  unitId: string;
+}
+
+export const emptyOrgFilters: OrgSearchFilters = {
+  query: '', department: '', managementLevel: '', unitId: '',
+};
+
+export const managementLevelLabels: Record<ManagementLevel, string> = {
+  executive: 'مدیریت ارشد',
+  deputy: 'معاونت',
+  department: 'مدیریت بخش',
+  unit: 'واحد',
+  staff: 'کارکنان',
+};
+
+export const managementLevelStyles: Record<ManagementLevel, string> = {
+  executive: 'bg-emerald text-white',
+  deputy: 'bg-emerald-deep text-white',
+  department: 'bg-teal text-white',
+  unit: 'bg-gold text-white',
+  staff: 'bg-gold-deep text-white',
+};
+
+export interface OrgTreeNode extends OrgMember {
+  children: OrgTreeNode[];
+}

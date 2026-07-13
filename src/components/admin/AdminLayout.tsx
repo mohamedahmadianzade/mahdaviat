@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { LayoutDashboard, BookOpen, ShoppingBag, Settings, ChevronRight, Tag, Library, Menu, X, FolderOpen } from 'lucide-react';
+import { LayoutDashboard, BookOpen, ShoppingBag, Settings, ChevronRight, Tag, Library, Menu, X, FolderOpen, Network, Users } from 'lucide-react';
 
-export type AdminSection = 'dashboard' | 'book-categories' | 'books' | 'product-categories' | 'products' | 'settings';
+export type AdminSection = 'dashboard' | 'book-categories' | 'books' | 'product-categories' | 'products' | 'org-units' | 'org-members' | 'settings';
 
 interface AdminLayoutProps { section: AdminSection; onSectionChange: (s: AdminSection) => void; onBackToSite: () => void; onLogout: () => void; children: React.ReactNode; }
 
@@ -12,9 +12,11 @@ const navItems: { key: AdminSection; label: string; icon: React.ReactNode; group
   { key: 'books', label: 'کتاب‌ها', icon: <BookOpen className="h-4 w-4" />, group: 'کتابخانه' },
   { key: 'product-categories', label: 'دسته‌بندی محصولات', icon: <Tag className="h-4 w-4" />, group: 'فروشگاه' },
   { key: 'products', label: 'محصولات', icon: <ShoppingBag className="h-4 w-4" />, group: 'فروشگاه' },
+  { key: 'org-units', label: 'واحدهای سازمانی', icon: <Network className="h-4 w-4" />, group: 'ساختار سازمانی' },
+  { key: 'org-members', label: 'اعضای سازمان', icon: <Users className="h-4 w-4" />, group: 'ساختار سازمانی' },
   { key: 'settings', label: 'تنظیمات', icon: <Settings className="h-4 w-4" />, group: 'سیستم' },
 ];
-const groups = ['کلی', 'کتابخانه', 'فروشگاه', 'سیستم'];
+const groups = ['کلی', 'کتابخانه', 'فروشگاه', 'ساختار سازمانی', 'سیستم'];
 
 function Sidebar({ section, onSectionChange, onBackToSite, onLogout, onClose }: { section: AdminSection; onSectionChange: (s: AdminSection) => void; onBackToSite: () => void; onLogout: () => void; onClose?: () => void; }) {
   return (

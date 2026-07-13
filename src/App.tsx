@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Library, ShoppingBag, BookOpen, SearchX, Settings } from 'lucide-react';
+import { Library, ShoppingBag, BookOpen, SearchX, Settings, Network } from 'lucide-react';
 import type { Book, SearchFilters } from './types';
 import { emptyFilters } from './types';
 import { searchBooks, getBookById, getSimilarBooks } from './lib/api';
@@ -12,15 +12,21 @@ import AdminProducts from './components/admin/AdminProducts';
 import AdminSettings from './components/admin/AdminSettings';
 import AdminBookCategories from './components/admin/AdminBookCategories';
 import AdminBooks from './components/admin/AdminBooks';
+import AdminOrgUnits from './components/admin/AdminOrgUnits';
+import AdminOrgMembers from './components/admin/AdminOrgMembers';
 import LandingPage from './components/LandingPage';
 import SearchBox from './components/SearchBox';
 import BookCard from './components/BookCard';
 import BookCardSkeleton from './components/BookCardSkeleton';
 import BookDetails from './components/BookDetails';
 import StoreSection from './components/StoreSection';
+import OrgSection from './components/OrgSection';
+import OrgPersonProfile from './components/org/OrgPersonProfile';
 import LoginPage from './components/LoginPage';
+import { getOrgMemberById, getActiveOrgUnits } from './lib/orgApi';
+import type { OrgMember, OrgUnit } from './types';
 
-type RootSection = 'landing' | 'library' | 'store' | 'admin';
+type RootSection = 'landing' | 'library' | 'store' | 'organization' | 'org-person' | 'admin';
 type LibraryView = 'home' | 'results' | 'details';
 
 function useAdminRoute(): boolean { return window.location.pathname.startsWith('/admin'); }
@@ -103,6 +109,8 @@ function AdminShell({ onBackToSite }: { onBackToSite: () => void }) {
       case 'books': return <AdminBooks />;
       case 'product-categories': return <AdminProductCategories />;
       case 'products': return <AdminProducts />;
+      case 'org-units': return <AdminOrgUnits />;
+      case 'org-members': return <AdminOrgMembers />;
       case 'settings': return <AdminSettings />;
     }
   };
@@ -113,9 +121,27 @@ export default function App() {
   const isAdmin = useAdminRoute();
   const [section, setSection] = useState<RootSection>(isAdmin ? 'admin' : 'landing');
   const [authed, setAuthed] = useState(false);
+  const [orgPerson, setOrgPerson] = useState<OrgMember | null>(null);
+  const [orgUnit, setOrgUnit] = useState<OrgUnit | undefined>(undefined);
+  const [orgPersonLoading, setOrgPersonLoading] = useState(false);
 
   const goAdmin = () => { history.pushState(null, '', '/admin'); setSection('admin'); };
   const backToSite = () => { history.pushState(null, '', '/'); setSection('landing'); setAuthed(false); };
+
+  const openOrgPerson = useCallback(async (id: string) => {
+    setSection('org-person');
+    setOrgPersonLoading(true);
+    const member = await getOrgMemberById(id);
+    if (member) {
+      setOrgPerson(member);
+      const units = await getActiveOrgUnits();
+      setOrgUnit(units.find((u) => u.id === member.unitId));
+    }
+    setOrgPersonLoading(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const backToOrg = () => { setSection('organization'); setOrgPerson(null); };
 
   if (section === 'admin' && !authed) return <LoginPage onLogin={() => setAuthed(true)} onBack={backToSite} />;
   if (section === 'admin' && authed) return <AdminShell onBackToSite={backToSite} />;
@@ -136,6 +162,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button onClick={() => setSection('library')} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${section === 'library' ? 'border-emerald bg-emerald text-white' : 'border-emerald/20 bg-white/60 text-emerald-deep hover:bg-emerald-soft'}`}><BookOpen className="h-3.5 w-3.5" />کتابخانه</button>
                 <button onClick={() => setSection('store')} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${section === 'store' ? 'border-gold bg-gold text-white' : 'border-emerald/20 bg-white/60 text-emerald-deep hover:bg-emerald-soft'}`}><ShoppingBag className="h-3.5 w-3.5" />فروشگاه</button>
+                <button onClick={() => setSection('organization')} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${section === 'organization' || section === 'org-person' ? 'border-emerald bg-emerald text-white' : 'border-emerald/20 bg-white/60 text-emerald-deep hover:bg-emerald-soft'}`}><Network className="h-3.5 w-3.5" />ساختار</button>
               </div>
             )}
             <button onClick={goAdmin} className="inline-flex items-center gap-1.5 rounded-full border border-emerald/15 bg-white/50 px-3 py-1.5 text-xs text-muted transition-all hover:bg-emerald-soft hover:text-emerald-deep" title="پنل مدیریت"><Settings className="h-3.5 w-3.5" /><span className="hidden sm:inline">مدیریت</span></button>
@@ -147,6 +174,8 @@ export default function App() {
           {section === 'landing' && (<motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}><LandingPage onSelect={setSection} /></motion.div>)}
           {section === 'library' && (<motion.div key="library" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}><LibrarySection /></motion.div>)}
           {section === 'store' && (<motion.div key="store" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}><StoreSection onBack={() => setSection('landing')} /></motion.div>)}
+          {section === 'organization' && (<motion.div key="organization" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}><OrgSection onPersonClick={openOrgPerson} /></motion.div>)}
+          {section === 'org-person' && (<motion.div key="org-person" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>{orgPersonLoading || !orgPerson ? (<div className="grid grid-cols-1 gap-8 lg:grid-cols-3 pt-8"><div className="skeleton h-48 w-full rounded-3xl lg:col-span-3" /><div className="skeleton h-64 w-full rounded-2xl lg:col-span-2" /><div className="skeleton h-64 w-full rounded-2xl" /></div>) : (<OrgPersonProfile member={orgPerson} unit={orgUnit} onBack={backToOrg} />)}</motion.div>)}
         </AnimatePresence>
       </main>
       <footer className="relative z-10 border-t border-emerald/10 bg-white/40 py-6"><div className="mx-auto max-w-6xl px-4 text-center sm:px-6"><p className="text-xs text-muted">مرکز فرهنگی دیجیتال — کتابخانه و فروشگاه</p></div></footer>
