@@ -54,7 +54,7 @@
   right: 50%;
   width: 2px;
   height: 1.5rem;
-  background: linear-gradient(to bottom, transparent, rgba(15, 106, 74, 0.25));
+  background: rgba(15, 106, 74, 0.3);
 }
 
 .org-children { position: relative; }
@@ -66,7 +66,7 @@
   right: calc(50% - (var(--child-w, 220px) / 2));
   left: calc(50% - (var(--child-w, 220px) / 2));
   height: 2px;
-  background: rgba(15, 106, 74, 0.2);
+  background: rgba(15, 106, 74, 0.3);
 }
 
 .org-children > .org-node:first-child[data-has-parent="true"]::after {
@@ -76,7 +76,7 @@
   right: 50%;
   width: 2px;
   height: 1.5rem;
-  background: rgba(15, 106, 74, 0.2);
+  background: rgba(15, 106, 74, 0.3);
   transform: translateX(50%);
 }
 
@@ -85,7 +85,7 @@
   left: 0;
   width: auto;
   height: 1.5rem;
-  background: linear-gradient(to bottom, transparent, rgba(15, 106, 74, 0.2));
+  background: rgba(15, 106, 74, 0.3);
 }
 
 .org-node[data-highlight="true"] > .org-card {

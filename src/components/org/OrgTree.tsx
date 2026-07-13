@@ -47,7 +47,7 @@ function OrgTreeItem({ node, highlightedIds, onPersonClick, defaultExpanded, for
             data-count={node.children.length}
             style={{ ['--child-w' as string]: '220px' }}
           >
-            <div className="flex flex-wrap justify-center gap-x-6 gap-y-0 pt-8">
+            <div className="flex flex-nowrap justify-center gap-x-6 pt-8" style={{ minWidth: 'max-content' }}>
               {node.children.map((child) => (
                 <OrgTreeItem
                   key={child.id}

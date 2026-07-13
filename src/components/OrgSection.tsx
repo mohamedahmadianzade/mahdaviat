@@ -133,7 +133,7 @@ export default function OrgSection({ onPersonClick }: OrgSectionProps) {
         )}
 
         {/* Tree */}
-        <div className="mt-8">
+        <div className="mt-16">
           {loading ? (
             <div className="flex flex-col items-center gap-6">
               <div className="skeleton h-32 w-56 rounded-2xl" />
