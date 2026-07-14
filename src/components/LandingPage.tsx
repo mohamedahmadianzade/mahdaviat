@@ -1,29 +1,111 @@
 import { motion } from 'framer-motion';
-import { Library, ShoppingBag, Network } from 'lucide-react';
+import { Library, ShoppingBag, Network, ArrowLeft } from 'lucide-react';
 
-interface LandingPageProps { onSelect: (section: 'library' | 'store' | 'organization') => void; }
+type Section = 'library' | 'store' | 'organization';
+
+interface LandingPageProps {
+  onSelect: (section: Section) => void;
+}
+
+const cards: {
+  key: Section;
+  title: string;
+  subtitle: string;
+  icon: typeof Library;
+  gradient: string;
+  iconBg: string;
+}[] = [
+  {
+    key: 'library',
+    title: 'کتابخانه دیجیتال',
+    subtitle: 'جستجو و دسترسی به هزاران کتاب، نسخه خطی و منابع علمی',
+    icon: Library,
+    gradient: 'from-emerald to-emerald-deep',
+    iconBg: 'bg-emerald-soft text-emerald-deep',
+  },
+  {
+    key: 'store',
+    title: 'فروشگاه',
+    subtitle: 'محصولات فرهنگی، کتاب‌ها و اقلام مهدوی',
+    icon: ShoppingBag,
+    gradient: 'from-gold to-gold-deep',
+    iconBg: 'bg-gold-soft text-gold-deep',
+  },
+  {
+    key: 'organization',
+    title: 'ساختار سازمانی',
+    subtitle: 'آشنایی با اعضا و چارت سازمانی بنیاد مهدویت',
+    icon: Network,
+    gradient: 'from-teal to-teal-dark',
+    iconBg: 'bg-teal/10 text-teal',
+  },
+];
 
 export default function LandingPage({ onSelect }: LandingPageProps) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-8">
-      <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-10 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald text-white shadow-card"><Library className="h-7 w-7" /></div>
-        <h1 className="font-display text-2xl font-bold text-emerald-deep sm:text-3xl">بنیاد مهدویت خراسان رضوی</h1>
-        <p className="mt-2 text-sm text-muted">کتابخانه جامع، فروشگاه محصولات فرهنگی و ساختار سازمانی</p>
+    <div className="flex min-h-[60vh] flex-col items-center justify-center py-10">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="mb-12 text-center"
+      >
+        <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald to-emerald-deep shadow-card">
+          <Library className="h-10 w-10 text-white" />
+        </div>
+        <h1 className="mb-3 font-display text-3xl font-bold text-emerald-deep sm:text-4xl">
+          بنیاد مهدویت خراسان رضوی
+        </h1>
+        <p className="mx-auto max-w-2xl text-sm text-muted sm:text-base">
+          کتابخانه جامع، فروشگاه محصولات فرهنگی و ساختار سازمانی
+        </p>
+        <div className="mx-auto mt-5 h-1 w-24 rounded-full bg-gradient-to-r from-emerald via-gold to-teal" />
       </motion.div>
-      <div className="grid w-full max-w-3xl grid-cols-1 gap-5 sm:grid-cols-3">
-        {[
-          { key: 'library' as const, icon: <Library className="h-9 w-9" />, title: 'کتابخانه دیجیتال', subtitle: 'جستجو و مطالعه در منابع اسلامی', accentBg: 'bg-emerald', hoverBorder: 'hover:border-emerald/50', hoverShadow: 'hover:shadow-card-hover' },
-          { key: 'store' as const, icon: <ShoppingBag className="h-9 w-9" />, title: 'فروشگاه', subtitle: 'محصولات فرهنگی و آموزشی', accentBg: 'bg-gold-deep', hoverBorder: 'hover:border-gold/50', hoverShadow: 'hover:shadow-gold' },
-          { key: 'organization' as const, icon: <Network className="h-9 w-9" />, title: 'ساختار سازمانی', subtitle: 'نمودار درختی اعضای بنیاد', accentBg: 'bg-teal', hoverBorder: 'hover:border-teal/50', hoverShadow: 'hover:shadow-card-hover' },
-        ].map((item, i) => (
-          <motion.button key={item.key} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1 + i * 0.1 }} whileHover={{ y: -8, scale: 1.015 }} whileTap={{ scale: 0.98 }} onClick={() => onSelect(item.key)} className={`group flex flex-col items-center rounded-3xl border border-emerald/12 bg-white p-7 text-center shadow-soft transition-all ${item.hoverBorder} ${item.hoverShadow}`}>
-            <div className={`mb-5 flex h-16 w-16 items-center justify-center rounded-2xl ${item.accentBg} text-white shadow-md transition-transform duration-300 group-hover:scale-110`}>{item.icon}</div>
-            <h2 className="font-display text-lg font-bold text-emerald-deep">{item.title}</h2>
-            <p className="mt-2 text-sm text-muted">{item.subtitle}</p>
-            <div className="mt-6 flex h-8 w-8 items-center justify-center rounded-full border border-emerald/20 text-emerald transition-all group-hover:border-emerald group-hover:bg-emerald group-hover:text-white"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5 rotate-180" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 3l-5 5 5 5M1 8h14" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-          </motion.button>
-        ))}
+
+      {/* Cards */}
+      <div className="grid w-full max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map((card, index) => {
+          const Icon = card.icon;
+          return (
+            <motion.button
+              key={card.key}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 + index * 0.15 }}
+              whileHover={{ y: -8, transition: { duration: 0.25 } }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => onSelect(card.key)}
+              className="group relative flex flex-col items-center overflow-hidden rounded-3xl border border-emerald/10 bg-white p-8 text-center shadow-soft transition-shadow hover:shadow-card-hover"
+            >
+              {/* Gradient top bar */}
+              <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${card.gradient}`} />
+
+              {/* Icon */}
+              <div
+                className={`mb-6 flex h-20 w-20 items-center justify-center rounded-2xl ${card.iconBg} transition-transform duration-300 group-hover:scale-110`}
+              >
+                <Icon className="h-10 w-10" />
+              </div>
+
+              {/* Title */}
+              <h3 className="mb-2 font-display text-xl font-bold text-emerald-deep">
+                {card.title}
+              </h3>
+
+              {/* Subtitle */}
+              <p className="mb-6 text-sm leading-relaxed text-muted">
+                {card.subtitle}
+              </p>
+
+              {/* CTA */}
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald transition-colors group-hover:text-emerald-deep">
+                ورود به بخش
+                <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+              </span>
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );

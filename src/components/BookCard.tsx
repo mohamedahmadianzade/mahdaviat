@@ -1,27 +1,69 @@
 import { motion } from 'framer-motion';
-import { BookMarked, Calendar, User } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import type { Book } from '../types';
-import { availabilityLabels, bookTypeLabels, availabilityStyles } from '../lib/api';
-import BookCover from './BookCover';
 
-interface BookCardProps { book: Book; index: number; onClick: () => void; }
+interface BookCardProps {
+  book: Book;
+  onClick: () => void;
+  availabilityLabels: Record<string, string>;
+  bookTypeLabels: Record<string, string>;
+  availabilityStyles: Record<string, string>;
+}
 
-export default function BookCard({ book, index, onClick }: BookCardProps) {
+export default function BookCard({
+  book,
+  onClick,
+  availabilityLabels,
+  bookTypeLabels,
+  availabilityStyles,
+}: BookCardProps) {
   return (
-    <motion.button layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.4), ease: 'easeOut' }} whileHover={{ y: -6 }} onClick={onClick} className="group flex w-full flex-col overflow-hidden rounded-2xl border border-emerald/10 bg-white p-4 text-right shadow-soft transition-shadow hover:shadow-card-hover">
-      <div className="flex gap-4">
-        <div className="shrink-0"><BookCover title={book.title} author={book.author} color={book.coverColor} size="sm" /></div>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <h3 className="line-clamp-2 font-semibold text-emerald-deep transition-colors group-hover:text-emerald">{book.title}</h3>
-          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted"><User className="h-3 w-3" /><span className="truncate">{book.author}</span></div>
-          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted"><BookMarked className="h-3 w-3" /><span className="truncate">{book.publisher}</span></div>
-          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted"><Calendar className="h-3 w-3" /><span>{book.publicationYear}</span><span className="text-mutedLight">•</span><span className="truncate">{book.subject}</span></div>
+    <motion.button
+      whileHover={{ y: -6 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.25 }}
+      onClick={onClick}
+      className="group flex w-full flex-col overflow-hidden rounded-2xl border border-emerald/10 bg-white text-right shadow-soft transition-shadow hover:shadow-card-hover"
+    >
+      {/* Cover */}
+      <div
+        className="relative flex h-52 items-center justify-center overflow-hidden p-4"
+        style={{ background: book.coverColor }}
+      >
+        <div className="absolute inset-0 opacity-20 transition-opacity group-hover:opacity-30">
+          <BookOpen className="absolute -bottom-4 -left-4 h-32 w-32 text-white" />
         </div>
+        <p className="relative z-10 line-clamp-4 text-center font-display text-base font-bold leading-snug text-white drop-shadow-md">
+          {book.title}
+        </p>
       </div>
-      <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-muted">{book.description}</p>
-      <div className="mt-3 flex items-center justify-between">
-        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${availabilityStyles[book.availability]}`}>{availabilityLabels[book.availability]}</span>
-        <span className="text-[11px] text-mutedLight">{bookTypeLabels[book.bookType]}</span>
+
+      {/* Info */}
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        {/* Title */}
+        <h3 className="line-clamp-2 font-display text-sm font-bold text-emerald-deep">
+          {book.title}
+        </h3>
+
+        {/* Author */}
+        <p className="line-clamp-1 text-xs text-muted">{book.author}</p>
+
+        {/* Publisher */}
+        <p className="line-clamp-1 text-xs text-mutedLight">{book.publisher}</p>
+
+        {/* Badges */}
+        <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
+          <span
+            className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${
+              availabilityStyles[book.availability] ?? 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {availabilityLabels[book.availability] ?? book.availability}
+          </span>
+          <span className="rounded-full bg-gold-soft px-2.5 py-1 text-[10px] font-medium text-gold-deep">
+            {bookTypeLabels[book.bookType] ?? book.bookType}
+          </span>
+        </div>
       </div>
     </motion.button>
   );

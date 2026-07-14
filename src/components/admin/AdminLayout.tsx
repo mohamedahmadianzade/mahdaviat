@@ -1,76 +1,184 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { LayoutDashboard, BookOpen, ShoppingBag, Settings, ChevronRight, Tag, Library, Menu, X, FolderOpen, Network, Users } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  LayoutDashboard,
+  BookOpen,
+  Package,
+  FolderTree,
+  Settings,
+  Network,
+  Users,
+  ArrowRight,
+  Shield,
+} from 'lucide-react';
+import AdminDashboard from './AdminDashboard';
+import AdminBooks from './AdminBooks';
+import AdminProducts from './AdminProducts';
+import AdminProductCategories from './AdminProductCategories';
+import AdminSettings from './AdminSettings';
+import AdminOrgUnits from './AdminOrgUnits';
+import AdminOrgMembers from './AdminOrgMembers';
 
-export type AdminSection = 'dashboard' | 'book-categories' | 'books' | 'product-categories' | 'products' | 'org-units' | 'org-members' | 'settings';
+export type AdminSection =
+  | 'dashboard'
+  | 'books'
+  | 'products'
+  | 'categories'
+  | 'settings'
+  | 'org-units'
+  | 'org-members';
 
-interface AdminLayoutProps { section: AdminSection; onSectionChange: (s: AdminSection) => void; onBackToSite: () => void; onLogout: () => void; children: React.ReactNode; }
-
-const navItems: { key: AdminSection; label: string; icon: React.ReactNode; group: string }[] = [
-  { key: 'dashboard', label: 'داشبورد', icon: <LayoutDashboard className="h-4 w-4" />, group: 'کلی' },
-  { key: 'book-categories', label: 'دسته‌بندی کتاب‌ها', icon: <FolderOpen className="h-4 w-4" />, group: 'کتابخانه' },
-  { key: 'books', label: 'کتاب‌ها', icon: <BookOpen className="h-4 w-4" />, group: 'کتابخانه' },
-  { key: 'product-categories', label: 'دسته‌بندی محصولات', icon: <Tag className="h-4 w-4" />, group: 'فروشگاه' },
-  { key: 'products', label: 'محصولات', icon: <ShoppingBag className="h-4 w-4" />, group: 'فروشگاه' },
-  { key: 'org-units', label: 'واحدهای سازمانی', icon: <Network className="h-4 w-4" />, group: 'ساختار سازمانی' },
-  { key: 'org-members', label: 'اعضای سازمان', icon: <Users className="h-4 w-4" />, group: 'ساختار سازمانی' },
-  { key: 'settings', label: 'تنظیمات', icon: <Settings className="h-4 w-4" />, group: 'سیستم' },
-];
-const groups = ['کلی', 'کتابخانه', 'فروشگاه', 'ساختار سازمانی', 'سیستم'];
-
-function Sidebar({ section, onSectionChange, onBackToSite, onLogout, onClose }: { section: AdminSection; onSectionChange: (s: AdminSection) => void; onBackToSite: () => void; onLogout: () => void; onClose?: () => void; }) {
-  return (
-    <div className="flex h-full flex-col overflow-y-auto bg-emerald-dark">
-      <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-        <div className="flex items-center gap-2.5"><div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15"><Library className="h-4 w-4 text-white" /></div><span className="text-sm font-bold text-white">پنل مدیریت</span></div>
-        {onClose && <button onClick={onClose} className="text-white/60 hover:text-white lg:hidden"><X className="h-5 w-5" /></button>}
-      </div>
-      <nav className="flex-1 px-3 py-4">
-        {groups.map((group) => {
-          const items = navItems.filter((n) => n.group === group);
-          if (!items.length) return null;
-          return (
-            <div key={group} className="mb-5">
-              <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-white/35">{group}</p>
-              {items.map((item) => (
-                <button key={item.key} onClick={() => { onSectionChange(item.key); onClose?.(); }} className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${section === item.key ? 'bg-white/15 text-white font-medium' : 'text-white/65 hover:bg-white/8 hover:text-white'}`}>
-                  {item.icon}<span>{item.label}</span>{section === item.key && <ChevronRight className="mr-auto h-3.5 w-3.5 rotate-180" />}
-                </button>
-              ))}
-            </div>
-          );
-        })}
-      </nav>
-      <div className="border-t border-white/10 p-4">
-        <button onClick={onBackToSite} className="mb-2 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-white/65 transition-all hover:bg-white/8 hover:text-white"><ChevronRight className="h-4 w-4" />بازگشت به سایت</button>
-        <button onClick={onLogout} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-rose-300/80 transition-all hover:bg-rose-500/15 hover:text-rose-200"><X className="h-4 w-4" />خروج</button>
-      </div>
-    </div>
-  );
+interface AdminLayoutProps {
+  onBackToSite: () => void;
 }
 
-export default function AdminLayout({ section, onSectionChange, onBackToSite, onLogout, children }: AdminLayoutProps) {
+interface SidebarItem {
+  key: AdminSection;
+  label: string;
+  icon: typeof LayoutDashboard;
+}
+
+const sidebarItems: SidebarItem[] = [
+  { key: 'dashboard', label: 'داشبورد', icon: LayoutDashboard },
+  { key: 'books', label: 'کتاب‌ها', icon: BookOpen },
+  { key: 'products', label: 'محصولات', icon: Package },
+  { key: 'categories', label: 'دسته‌بندی محصولات', icon: FolderTree },
+  { key: 'settings', label: 'تنظیمات فروشگاه', icon: Settings },
+  { key: 'org-units', label: 'واحدهای سازمانی', icon: Network },
+  { key: 'org-members', label: 'اعضای سازمان', icon: Users },
+];
+
+export default function AdminLayout({ onBackToSite }: AdminLayoutProps) {
+  const [section, setSection] = useState<AdminSection>('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
-  const currentLabel = navItems.find((n) => n.key === section)?.label ?? '';
+
+  const currentItem = sidebarItems.find((i) => i.key === section);
+
+  const selectSection = (s: AdminSection) => {
+    setSection(s);
+    setMobileOpen(false);
+  };
+
   return (
-    <div className="flex min-h-screen bg-ivory" dir="rtl">
-      <aside className="hidden w-56 shrink-0 lg:block"><div className="sticky top-0 h-screen"><Sidebar section={section} onSectionChange={onSectionChange} onBackToSite={onBackToSite} onLogout={onLogout} /></div></aside>
+    <div className="flex min-h-screen flex-col bg-ivory lg:flex-row">
+      {/* Mobile top bar */}
+      <div className="flex items-center justify-between border-b border-emerald/10 bg-white px-4 py-3 lg:hidden">
+        <div className="flex items-center gap-2">
+          <Shield className="h-6 w-6 text-emerald" />
+          <span className="font-display font-bold text-emerald-deep">پنل مدیریت</span>
+        </div>
+        <button
+          onClick={() => setMobileOpen((v) => !v)}
+          className="btn-ghost px-3 py-2 text-xs"
+        >
+          منو
+        </button>
+      </div>
+
+      {/* Sidebar */}
       <AnimatePresence>
         {mobileOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} />
-            <motion.aside initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} className="fixed right-0 top-0 z-50 h-full w-56 lg:hidden"><Sidebar section={section} onSectionChange={onSectionChange} onBackToSite={onBackToSite} onLogout={onLogout} onClose={() => setMobileOpen(false)} /></motion.aside>
-          </>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMobileOpen(false)}
+            className="fixed inset-0 z-30 bg-ink/30 backdrop-blur-sm lg:hidden"
+          />
         )}
       </AnimatePresence>
+
+      <aside
+        className={`fixed inset-y-0 right-0 z-40 w-72 transform border-l border-emerald/10 bg-white shadow-card transition-transform duration-300 lg:static lg:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+        }`}
+      >
+        <div className="flex h-full flex-col">
+          {/* Brand */}
+          <div className="flex items-center gap-3 border-b border-emerald/10 px-6 py-5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald to-emerald-deep shadow-soft">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="font-display text-base font-bold text-emerald-deep">پنل مدیریت</h1>
+              <p className="text-xs text-muted">بنیاد مهدویت خراسان رضوی</p>
+            </div>
+          </div>
+
+          {/* Nav */}
+          <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-4">
+            {sidebarItems.map((item) => {
+              const Icon = item.icon;
+              const active = section === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => selectSection(item.key)}
+                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
+                    active
+                      ? 'bg-emerald text-white shadow-soft'
+                      : 'text-muted hover:bg-emerald-soft hover:text-emerald-deep'
+                  }`}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Back to site */}
+          <div className="border-t border-emerald/10 p-4">
+            <button
+              onClick={onBackToSite}
+              className="btn-ghost w-full"
+            >
+              <ArrowRight className="h-4 w-4" />
+              بازگشت به سایت
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main content */}
       <div className="flex flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center gap-4 border-b border-emerald/10 bg-white/80 px-4 py-3 backdrop-blur sm:px-6">
-          <button onClick={() => setMobileOpen(true)} className="text-emerald-deep lg:hidden"><Menu className="h-5 w-5" /></button>
-          <h1 className="font-display text-base font-semibold text-emerald-deep">{currentLabel}</h1>
+        {/* Header */}
+        <header className="sticky top-0 z-20 border-b border-emerald/10 bg-white/80 backdrop-blur-md">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div>
+              <h2 className="font-display text-xl font-bold text-emerald-deep">
+                {currentItem?.label ?? 'پنل مدیریت'}
+              </h2>
+              <p className="text-xs text-muted">بنیاد مهدویت خراسان رضوی — پنل مدیریت</p>
+            </div>
+            <button
+              onClick={onBackToSite}
+              className="btn-ghost hidden lg:inline-flex"
+            >
+              <ArrowRight className="h-4 w-4" />
+              بازگشت به سایت
+            </button>
+          </div>
         </header>
-        <main className="flex-1 p-4 sm:p-6">
+
+        {/* Section content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <AnimatePresence mode="wait">
-            <motion.div key={section} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>{children}</motion.div>
+            <motion.div
+              key={section}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
+            >
+              {section === 'dashboard' && <AdminDashboard />}
+              {section === 'books' && <AdminBooks />}
+              {section === 'products' && <AdminProducts />}
+              {section === 'categories' && <AdminProductCategories />}
+              {section === 'settings' && <AdminSettings />}
+              {section === 'org-units' && <AdminOrgUnits />}
+              {section === 'org-members' && <AdminOrgMembers />}
+            </motion.div>
           </AnimatePresence>
         </main>
       </div>

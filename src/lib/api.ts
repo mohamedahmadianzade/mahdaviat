@@ -1,5 +1,6 @@
 import type { Book, SearchFilters } from '../types';
-import booksData from '../data/books';
+import { defaultBooks } from '../data/books';
+import { loadJSON, saveJSON, STORAGE_KEYS } from './storage';
 
 export interface SearchResult { books: Book[]; total: number; }
 
@@ -9,8 +10,13 @@ const matches = (field: string | undefined, term: string) => !term || (!!field &
 const matchesAny = (arr: string[] | undefined, term: string) => !term || (!!arr?.length && arr.some((k) => normalize(k).includes(normalize(term))));
 const matchesExact = (field: string | undefined, term: string) => !term || (!!field && normalize(field) === normalize(term));
 
+function getBooks(): Book[] {
+  return loadJSON<Book[]>(STORAGE_KEYS.books, defaultBooks);
+}
+
 export async function searchBooks(filters: SearchFilters): Promise<SearchResult> {
-  await delay(350);
+  await delay(300);
+  const booksData = getBooks();
   const results = booksData.filter((b) => {
     const q = filters.query.trim();
     if (q) {
@@ -22,10 +28,18 @@ export async function searchBooks(filters: SearchFilters): Promise<SearchResult>
   return { books: results, total: results.length };
 }
 
-export async function getBookById(id: string): Promise<Book | null> { await delay(250); return booksData.find((b) => b.id === id) ?? null; }
-export async function getSimilarBooks(book: Book): Promise<Book[]> { return (book.similarIds ?? []).map((id) => booksData.find((b) => b.id === id)).filter((b): b is Book => Boolean(b)); }
+export async function getBookById(id: string): Promise<Book | null> {
+  await delay(200);
+  return getBooks().find((b) => b.id === id) ?? null;
+}
+
+export async function getSimilarBooks(book: Book): Promise<Book[]> {
+  const booksData = getBooks();
+  return (book.similarIds ?? []).map((id) => booksData.find((b) => b.id === id)).filter((b): b is Book => Boolean(b));
+}
 
 export function getFilterOptions() {
+  const booksData = getBooks();
   return {
     subjects: [...new Set(booksData.map((b) => b.subject))].sort(),
     categories: [...new Set(booksData.map((b) => b.category))].sort(),
@@ -36,6 +50,33 @@ export function getFilterOptions() {
     tags: [...new Set(booksData.flatMap((b) => b.tags))].sort(),
   };
 }
+
+// ─── Admin CRUD ──────────────────────────────────────────────────────────────
+
+export async function adminGetBooks(): Promise<Book[]> {
+  return [...getBooks()];
+}
+
+export async function adminSaveBook(book: Book): Promise<Book> {
+  const books = getBooks();
+  const idx = books.findIndex((b) => b.id === book.id);
+  if (idx >= 0) books[idx] = book;
+  else books.push(book);
+  saveJSON(STORAGE_KEYS.books, books);
+  return { ...book };
+}
+
+export async function adminDeleteBook(id: string): Promise<void> {
+  const books = getBooks().filter((b) => b.id !== id);
+  saveJSON(STORAGE_KEYS.books, books);
+}
+
+export async function adminGetBookStats() {
+  const books = getBooks();
+  return { totalBooks: books.length };
+}
+
+export function newId() { return 'b' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
 export const availabilityLabels: Record<string, string> = { available: 'موجود', borrowed: 'امانت رفته', reference: 'مرجع', restored: 'در حال مرمت' };
 export const bookTypeLabels: Record<string, string> = { printed: 'چاپی', digital: 'دیجیتال', manuscript: 'نسخه خطی', lithographic: 'سنگی' };

@@ -1,18 +1,53 @@
 import type { Book } from '../types';
 
-const books: Book[] = [
-  { id: 'b1', title: 'احیاء علوم الدین', author: 'ابو حامد محمد غزالی', translator: 'محمود مهدوی دامغانی', publisher: 'انتشارات امیرکبیر', subject: 'فقه و اصول', category: 'فقه اسلامی', keywords: ['فقه', 'اصول دین', 'عبادات'], language: 'فارسی', publicationYear: 2018, century: 'پنجم هجری', collection: 'گنجینه فقه', libraryCode: 'FK-1204', isbn: '978-964-03-9421-2', availability: 'available', bookType: 'printed', tags: ['فقه', 'کلام', 'غزالی'], description: 'احیاء علوم الدین یکی از مهم‌ترین آثار ابوحامد غزالی در حوزه فقه و اصول دین است که به بررسی عبادات، عادات و منجیات می‌پردازد.', coverColor: '#0F6A4A', pages: 620, similarIds: ['b2', 'b4'] },
-  { id: 'b2', title: 'شرح فصوص الحکم', author: 'محمود داوودی قیصری', translator: 'محمد خواجوی', publisher: 'انتشارات مولی', subject: 'عرفان و فلسفه', category: 'عرفان نظری', keywords: ['عرفان', 'فصوص الحکم', 'ابن عربی'], language: 'فارسی', publicationYear: 2016, century: 'هشتم هجری', collection: 'گنجینه عرفان', libraryCode: 'IR-0880', isbn: '978-600-120-45-7', availability: 'reference', bookType: 'manuscript', tags: ['عرفان', 'ابن عربی', 'فلسفه'], description: 'شرحی جامع بر فصوص الحکم ابن عربی از داوودی قیصری که به تبیان وحدت وجود و مراتب ظهور حق در عالم می‌پردازد.', coverColor: '#0B5454', pages: 480, similarIds: ['b1', 'b5'] },
-  { id: 'b3', title: 'دیوان حافظ', author: 'شمس‌الدین محمد حافظ شیرازی', publisher: 'انتشارات سخن', subject: 'ادبیات و شعر', category: 'شعر کلاسیک', keywords: ['شعر', 'غزل', 'حافظ'], language: 'فارسی', publicationYear: 2020, century: 'هشتم هجری', collection: 'گنجینه ادب', libraryCode: 'AD-0301', isbn: '978-964-300-12-8', availability: 'available', bookType: 'printed', tags: ['شعر', 'غزل', 'ادبیات'], description: 'دیوان حافظ شیرازی شامل غزلیات، رباعیات و مثنویات این شاعر بزرگ فارسی‌زبان است.', coverColor: '#C9A227', pages: 720, similarIds: ['b6', 'b8'] },
-  { id: 'b4', title: 'الکافی', author: 'ثقةالاسلام کلینی', translator: 'سید جواد مصطفوی', publisher: 'دارالکتب الاسلامیه', subject: 'فقه و اصول', category: 'حدیث', keywords: ['حدیث', 'فقه', 'روایات'], language: 'فارسی', publicationYear: 2015, century: 'چهارم هجری', collection: 'گنجینه فقه', libraryCode: 'FK-2210', isbn: '978-600-701-33-5', availability: 'borrowed', bookType: 'printed', tags: ['حدیث', 'فقه', 'کلینی'], description: 'الکافی یکی از کتب اربعه شیعه و گردآوری‌شده از روایات ائمه است.', coverColor: '#07382A', pages: 950, similarIds: ['b1', 'b7'] },
-  { id: 'b5', title: 'مثنوی معنوی', author: 'جلال‌الدین محمد بلخی رومی', publisher: 'انتشارات نیلوفر', subject: 'عرفان و فلسفه', category: 'عرفان عملی', keywords: ['عرفان', 'مثنوی', 'مولوی'], language: 'فارسی', publicationYear: 2019, century: 'هفتم هجری', collection: 'گنجینه عرفان', libraryCode: 'IR-0145', isbn: '978-964-640-88-1', availability: 'available', bookType: 'printed', tags: ['عرفان', 'مثنوی', 'مولوی'], description: 'مثنوی معنوی اثر مولوی، منظومه‌ای شش دفتری است که به زبان ساده و داستان‌های نمادین به تبیان سیر و سلوک عرفانی می‌پردازد.', coverColor: '#1B8A66', pages: 810, similarIds: ['b2', 'b3'] },
-  { id: 'b6', title: 'گلستان سعدی', author: 'ابومحمد مصلح‌الدین سعدی شیرازی', publisher: 'انتشارات چشمه', subject: 'ادبیات و شعر', category: 'نثر کلاسیک', keywords: ['نثر', 'حکایت', 'سعدی'], language: 'فارسی', publicationYear: 2017, century: 'هفتم هجری', collection: 'گنجینه ادب', libraryCode: 'AD-0188', isbn: '978-964-202-77-3', availability: 'available', bookType: 'printed', tags: ['نثر', 'حکایت', 'سعدی'], description: 'گلستان سعدی شامل باب‌هایی در اخلاق، سیاست و عشق است که با نثری فصیح و حکایات کوتاه بیان شده است.', coverColor: '#0E6E6E', pages: 340, similarIds: ['b3', 'b8'] },
-  { id: 'b7', title: 'نهج البلاغه', author: 'سید رضی', translator: 'محمد دشتی', publisher: 'انتشارات نوید شیراز', subject: 'فقه و اصول', category: 'خطبه و نامه', keywords: ['خطبه', 'حکمت', 'امام علی'], language: 'فارسی', publicationYear: 2021, century: 'چهارم هجری', collection: 'گنجینه فقه', libraryCode: 'FK-0550', isbn: '978-600-112-90-4', availability: 'available', bookType: 'digital', tags: ['خطبه', 'حکمت', 'امام علی'], description: 'نهج البلاغه مجموعه‌ای از خطبه‌ها، نامه‌ها و کلمات قصار امام علی (ع) است.', coverColor: '#0A4D38', pages: 560, similarIds: ['b4', 'b1'] },
-  { id: 'b8', title: 'بوستان سعدی', author: 'ابومحمد مصلح‌الدین سعدی شیرازی', publisher: 'انتشارات سخن', subject: 'ادبیات و شعر', category: 'شعر کلاسیک', keywords: ['شعر', 'اخلاق', 'سعدی'], language: 'فارسی', publicationYear: 2018, century: 'هفتم هجری', collection: 'گنجینه ادب', libraryCode: 'AD-0190', isbn: '978-964-300-55-2', availability: 'reference', bookType: 'lithographic', tags: ['شعر', 'اخلاق', 'سعدی'], description: 'بوستان سعدی منظومه‌ای در اخلاق، تربیت و حکمت عملی است.', coverColor: '#A8851C', pages: 280, similarIds: ['b3', 'b6'] },
-  { id: 'b9', title: 'اسرار الخوات', author: 'ابوالقاسم فردوسی توسی', publisher: 'انتشارات علمی و فرهنگی', subject: 'تاریخ و تمدن', category: 'حماسه', keywords: ['حماسه', 'تاریخ', 'ایران'], language: 'فارسی', publicationYear: 2014, century: 'چهارم هجری', collection: 'گنجینه تاریخ', libraryCode: 'HS-0099', isbn: '978-964-445-12-6', availability: 'available', bookType: 'printed', tags: ['حماسه', 'فردوسی', 'شاهنامه'], description: 'گزیده‌ای از داستان‌های شاهنامه فردوسی که به حماسه‌های ملی و تاریخ ایران باستان می‌پردازد.', coverColor: '#0B5454', pages: 420, similarIds: ['b3', 'b6'] },
-  { id: 'b10', title: 'کیمیای سعادت', author: 'ابو حامد محمد غزالی', translator: 'احمد آرام', publisher: 'انتشارات شرکت سهامی', subject: 'عرفان و فلسفه', category: 'اخلاق اسلامی', keywords: ['اخلاق', 'سعادت', 'غزالی'], language: 'فارسی', publicationYear: 2019, century: 'پنجم هجری', collection: 'گنجینه عرفان', libraryCode: 'IR-0770', isbn: '978-600-901-44-0', availability: 'borrowed', bookType: 'printed', tags: ['اخلاق', 'غزالی', 'سعادت'], description: 'کیمیای سعادت خلاصه‌ای از احیاء علوم الدین غزالی به زبان فارسی است.', coverColor: '#0F6A4A', pages: 510, similarIds: ['b1', 'b5'] },
-  { id: 'b11', title: 'تفسیر المیزان', author: 'علامه سید محمدحسین طباطبایی', translator: 'سید محمدباقر موسوی همدانی', publisher: 'انتشارات دفتر نشر اسلامی', subject: 'قرآن و تفسیر', category: 'تفسیر قرآن', keywords: ['تفسیر', 'قرآن', 'میزان'], language: 'فارسی', publicationYear: 2013, century: 'چهاردهم هجری', collection: 'گنجینه قرآن', libraryCode: 'QR-2001', isbn: '978-600-500-11-9', availability: 'available', bookType: 'printed', tags: ['تفسیر', 'قرآن', 'طباطبایی'], description: 'تفسیر المیزان یکی از مهم‌ترین تفاسیر قرآن در عصر حاضر است.', coverColor: '#073B3B', pages: 3200, similarIds: ['b7', 'b4'] },
-  { id: 'b12', title: 'حدیث بستان', author: 'مولana عبدالرحمن جامی', publisher: 'انتشارات میراث مکتوب', subject: 'ادبیات و شعر', category: 'نثر عرفانی', keywords: ['عرفان', 'جامی', 'حکایت'], language: 'فارسی', publicationYear: 2016, century: 'نهم هجری', collection: 'گنجینه عرفان', libraryCode: 'IR-0330', isbn: '978-964-678-22-4', availability: 'restored', bookType: 'manuscript', tags: ['عرفان', 'جامی', 'حکایت'], description: 'حدیث بستان اثر عبدالرحمن جامی است که به حکایت‌های عرفانی و نثری ادبی می‌پردازد.', coverColor: '#C9A227', pages: 190, similarIds: ['b5', 'b2'] },
+const cover = (c: string) => `linear-gradient(135deg, ${c}, ${c}dd)`;
+
+export const defaultBooks: Book[] = [
+  {
+    id: 'b1', title: 'مکیال المکارم فی فوائد الدعاء للقائم', author: 'سید محمدتقی موسوی اصفهانی',
+    publisher: 'مؤسسه امام مهدی', subject: 'دعا و زیارات', category: 'مهدویت',
+    keywords: ['دعا', 'زیارت', 'قائم', 'مهدی'], language: 'عربی', publicationYear: 1420,
+    century: 'قرن ۱۵', collection: 'مجموعه مهدویت', libraryCode: 'MAJ-001', isbn: '978-964-1234-01-1',
+    availability: 'available', bookType: 'printed', tags: ['دعا', 'زیارت', 'مهدویت'],
+    description: 'یکی از مهم‌ترین کتاب‌ها در زمینه دعا و زیارات مخصوص حضرت مهدی (عج).', coverColor: cover('#0F6A4A'), pages: 320,
+    similarIds: ['b2', 'b3'],
+  },
+  {
+    id: 'b2', title: 'الإمام المهدی موجود', author: 'سید محمدباقر صدر',
+    publisher: 'انتشارات اسلامی', subject: 'کلام و عقاید', category: 'مهدویت',
+    keywords: ['امام مهدی', 'وجود', 'کلام'], language: 'عربی', publicationYear: 1395,
+    century: 'قرن ۱۵', collection: 'مجموعه مهدویت', libraryCode: 'MAJ-002', isbn: '978-964-1234-02-8',
+    availability: 'available', bookType: 'printed', tags: ['کلام', 'عقاید', 'مهدویت'],
+    description: 'کتابی در اثبات وجود امام مهدی (عج) با استدلال‌های کلامی و عقلی.', coverColor: cover('#0B5454'), pages: 280,
+    similarIds: ['b1', 'b4'],
+  },
+  {
+    id: 'b3', title: 'دایره المعارف مهدویت', author: 'گروه مؤلفان',
+    publisher: 'بنیاد فرهنگی مهدویت', subject: 'دایره المعارف', category: 'مهدویت',
+    keywords: ['دایره المعارف', 'مهدویت', 'مرجع'], language: 'فارسی', publicationYear: 1402,
+    century: 'قرن ۱۵', collection: 'مجموعه مهدویت', libraryCode: 'MAJ-003', isbn: '978-964-1234-03-5',
+    availability: 'available', bookType: 'printed', tags: ['دایره المعارف', 'مهدویت', 'مرجع'],
+    description: 'دایره المعارف جامع در موضوع مهدویت و علوم وابسته.', coverColor: cover('#C9A227'), pages: 650,
+    similarIds: ['b1', 'b5'],
+  },
+  {
+    id: 'b4', title: 'مهدویت در آینه احادیث', author: 'علی اصغر مروی',
+    publisher: 'انتشارات امیر', subject: 'حدیث', category: 'مهدویت',
+    keywords: ['حدیث', 'مهدویت', 'احادیث'], language: 'فارسی', publicationYear: 1398,
+    century: 'قرن ۱۵', collection: 'مجموعه مهدویت', libraryCode: 'MAJ-004', isbn: '978-964-1234-04-2',
+    availability: 'available', bookType: 'printed', tags: ['حدیث', 'مهدویت'],
+    description: 'مجموعه‌ای از احادیث مرتبط با مهدویت و امام زمان (عج).', coverColor: cover('#1B8A66'), pages: 240,
+    similarIds: ['b2', 'b5'],
+  },
+  {
+    id: 'b5', title: 'انتظار در اندیشه اسلامی', author: 'محمدمهدی حسینی',
+    publisher: 'انتشارات معارف', subject: 'انتظار', category: 'مهدویت',
+    keywords: ['انتظار', 'اسلام', 'مهدویت'], language: 'فارسی', publicationYear: 1399,
+    century: 'قرن ۱۵', collection: 'مجموعه مهدویت', libraryCode: 'MAJ-005', isbn: '978-964-1234-05-9',
+    availability: 'available', bookType: 'digital', tags: ['انتظار', 'مهدویت'],
+    description: 'بررسی مفهوم انتظار در اندیشه اسلامی و مکاتب مختلف.', coverColor: cover('#07382A'), pages: 180,
+    similarIds: ['b3', 'b4'],
+  },
 ];
 
-export default books;
+export default defaultBooks;

@@ -1,67 +1,336 @@
-import { Search, SlidersHorizontal, X, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Search, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import type { SearchFilters } from '../types';
-import { getFilterOptions, availabilityLabels, bookTypeLabels } from '../lib/api';
+import { emptyFilters } from '../types';
 
-interface SearchBoxProps { filters: SearchFilters; onFiltersChange: (f: SearchFilters) => void; onSearch: () => void; advancedOpen: boolean; onToggleAdvanced: () => void; }
+interface FilterOptions {
+  subjects: string[];
+  categories: string[];
+  languages: string[];
+  centuries: string[];
+  collections: string[];
+  publishers: string[];
+  tags: string[];
+}
 
-const textFields: { key: keyof SearchFilters; label: string }[] = [
-  { key: 'title', label: 'عنوان کتاب' }, { key: 'author', label: 'نویسنده' }, { key: 'translator', label: 'مترجم' },
-  { key: 'publisher', label: 'ناشر' }, { key: 'keywords', label: 'کلیدواژه' }, { key: 'libraryCode', label: 'کد کتابخانه' },
-  { key: 'isbn', label: 'شابک (ISBN)' }, { key: 'publicationYear', label: 'سال انتشار' },
-];
+interface SearchBoxProps {
+  filters: SearchFilters;
+  onSearch: (f: SearchFilters) => void;
+  filterOptions: FilterOptions;
+}
 
-export default function SearchBox({ filters, onFiltersChange, onSearch, advancedOpen, onToggleAdvanced }: SearchBoxProps) {
-  const options = getFilterOptions();
-  const update = (key: keyof SearchFilters, value: string) => onFiltersChange({ ...filters, [key]: value });
-  const resetAdvanced = () => onFiltersChange({ ...filters, title: '', author: '', translator: '', publisher: '', subject: '', category: '', keywords: '', language: '', publicationYear: '', century: '', collection: '', libraryCode: '', isbn: '', availability: '', bookType: '', tags: '' });
-  const selectFields: { key: keyof SearchFilters; label: string; opts: string[] }[] = [
-    { key: 'subject', label: 'موضوع', opts: options.subjects }, { key: 'category', label: 'دسته', opts: options.categories },
-    { key: 'language', label: 'زبان', opts: options.languages }, { key: 'century', label: 'قرن', opts: options.centuries },
-    { key: 'collection', label: 'مجموعه', opts: options.collections }, { key: 'availability', label: 'وضعیت موجودی', opts: Object.keys(availabilityLabels) },
-    { key: 'bookType', label: 'نوع کتاب', opts: Object.keys(bookTypeLabels) }, { key: 'tags', label: 'برچسب', opts: options.tags },
-  ];
+export default function SearchBox({ filters, onSearch, filterOptions }: SearchBoxProps) {
+  const [local, setLocal] = useState<SearchFilters>(filters);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const update = (field: keyof SearchFilters, value: string) => {
+    setLocal((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSearch(local);
+  };
+
+  const handleReset = () => {
+    setLocal(emptyFilters);
+  };
 
   return (
-    <div className="w-full">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }} className="group relative mx-auto max-w-2xl">
-        <div className="glass flex items-center gap-3 rounded-3xl px-5 py-3.5 shadow-card transition-all focus-within:shadow-card-hover focus-within:border-emerald/40">
-          <Search className="h-5 w-5 shrink-0 text-emerald" />
-          <input type="text" value={filters.query} onChange={(e) => update('query', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && onSearch()} placeholder="نام کتاب، نویسنده، موضوع یا کلیدواژه را جستجو کنید..." className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-mutedLight" aria-label="جستجو" />
-          {filters.query && <button onClick={() => update('query', '')} className="rounded-full p-1 text-mutedLight hover:text-emerald transition-colors" aria-label="پاک کردن"><X className="h-4 w-4" /></button>}
-          <button onClick={onSearch} className="btn-primary !rounded-2xl !px-4 !py-2" aria-label="جستجو"><Search className="h-4 w-4" /><span className="hidden sm:inline">جستجو</span></button>
-        </div>
-      </motion.div>
-      <div className="mt-4 flex justify-center">
-        <button onClick={onToggleAdvanced} className="group inline-flex items-center gap-2 rounded-full border border-emerald/20 bg-white/50 px-5 py-2 text-sm font-medium text-emerald-deep transition-all hover:bg-emerald-soft hover:border-emerald/40">
-          <SlidersHorizontal className="h-4 w-4 transition-transform group-hover:rotate-12" />جستجوی پیشرفته
-        </button>
+    <div className="mx-auto max-w-4xl">
+      {/* Heading */}
+      <div className="mb-6 text-center">
+        <h2 className="mb-2 font-display text-2xl font-bold text-emerald-deep">
+          کتابخانه دیجیتال
+        </h2>
+        <p className="text-sm text-muted">
+          جستجوی پیشرفته در میان کتاب‌ها، نسخه‌های خطی و منابع علمی
+        </p>
       </div>
-      <AnimatePresence>
-        {advancedOpen && (
-          <motion.div initial={{ opacity: 0, height: 0, marginTop: 0 }} animate={{ opacity: 1, height: 'auto', marginTop: 20 }} exit={{ opacity: 0, height: 0, marginTop: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
-            <div className="glass mx-auto max-w-4xl rounded-3xl p-6 shadow-card">
-              <div className="mb-5 flex items-center justify-between">
-                <h3 className="font-semibold text-emerald-deep">فیلترهای پیشرفته</h3>
-                <button onClick={resetAdvanced} className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-emerald transition-colors"><RotateCcw className="h-3.5 w-3.5" />پاک کردن فیلترها</button>
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {textFields.map((f) => (<div key={f.key}><label className="mb-1.5 block text-xs font-medium text-muted">{f.label}</label><input type="text" value={filters[f.key]} onChange={(e) => update(f.key, e.target.value)} placeholder={f.label} className="input-field" /></div>))}
-                {selectFields.map((f) => (
-                  <div key={f.key}>
-                    <label className="mb-1.5 block text-xs font-medium text-muted">{f.label}</label>
-                    <select value={filters[f.key]} onChange={(e) => update(f.key, e.target.value)} className="input-field cursor-pointer">
-                      <option value="">همه</option>
-                      {f.opts.map((o) => (<option key={o} value={o}>{f.key === 'availability' ? availabilityLabels[o] : f.key === 'bookType' ? bookTypeLabels[o] : o}</option>))}
+
+      {/* Search form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Main search */}
+        <div className="relative">
+          <Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-mutedLight" />
+          <input
+            type="text"
+            value={local.query}
+            onChange={(e) => update('query', e.target.value)}
+            placeholder="عنوان، نویسنده، موضوع یا کلیدواژه..."
+            className="input-field pr-12 text-base"
+          />
+        </div>
+
+        {/* Advanced toggle */}
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced((v) => !v)}
+            className="inline-flex items-center gap-2 text-sm font-medium text-emerald transition-colors hover:text-emerald-deep"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            جستجوی پیشرفته
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {showAdvanced && (
+            <button
+              type="button"
+              onClick={handleReset}
+              className="inline-flex items-center gap-1 text-xs text-muted transition-colors hover:text-emerald-deep"
+            >
+              <X className="h-3.5 w-3.5" />
+              پاک کردن فیلترها
+            </button>
+          )}
+        </div>
+
+        {/* Advanced filters */}
+        <AnimatePresence initial={false}>
+          {showAdvanced && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="rounded-2xl border border-emerald/10 bg-cream/40 p-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {/* Title */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">عنوان کتاب</label>
+                    <input
+                      type="text"
+                      value={local.title}
+                      onChange={(e) => update('title', e.target.value)}
+                      placeholder="عنوان..."
+                      className="input-field"
+                    />
+                  </div>
+
+                  {/* Author */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">نویسنده</label>
+                    <input
+                      type="text"
+                      value={local.author}
+                      onChange={(e) => update('author', e.target.value)}
+                      placeholder="نام نویسنده..."
+                      className="input-field"
+                    />
+                  </div>
+
+                  {/* Translator */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">مترجم</label>
+                    <input
+                      type="text"
+                      value={local.translator}
+                      onChange={(e) => update('translator', e.target.value)}
+                      placeholder="نام مترجم..."
+                      className="input-field"
+                    />
+                  </div>
+
+                  {/* Publisher */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">ناشر</label>
+                    <input
+                      type="text"
+                      value={local.publisher}
+                      onChange={(e) => update('publisher', e.target.value)}
+                      placeholder="ناشر..."
+                      className="input-field"
+                    />
+                  </div>
+
+                  {/* Subject dropdown */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">موضوع</label>
+                    <select
+                      value={local.subject}
+                      onChange={(e) => update('subject', e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">همه موضوعات</option>
+                      {filterOptions.subjects.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
                     </select>
                   </div>
-                ))}
+
+                  {/* Category dropdown */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">دسته‌بندی</label>
+                    <select
+                      value={local.category}
+                      onChange={(e) => update('category', e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">همه دسته‌ها</option>
+                      {filterOptions.categories.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Keywords */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">کلیدواژه‌ها</label>
+                    <input
+                      type="text"
+                      value={local.keywords}
+                      onChange={(e) => update('keywords', e.target.value)}
+                      placeholder="کلیدواژه..."
+                      className="input-field"
+                    />
+                  </div>
+
+                  {/* Language dropdown */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">زبان</label>
+                    <select
+                      value={local.language}
+                      onChange={(e) => update('language', e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">همه زبان‌ها</option>
+                      {filterOptions.languages.map((l) => (
+                        <option key={l} value={l}>{l}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Publication year */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">سال نشر</label>
+                    <input
+                      type="text"
+                      value={local.publicationYear}
+                      onChange={(e) => update('publicationYear', e.target.value)}
+                      placeholder="مثال: 1402"
+                      className="input-field"
+                    />
+                  </div>
+
+                  {/* Century dropdown */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">قرن</label>
+                    <select
+                      value={local.century}
+                      onChange={(e) => update('century', e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">همه قرن‌ها</option>
+                      {filterOptions.centuries.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Collection dropdown */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">مجموعه</label>
+                    <select
+                      value={local.collection}
+                      onChange={(e) => update('collection', e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">همه مجموعه‌ها</option>
+                      {filterOptions.collections.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Library code */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">کد کتابخانه</label>
+                    <input
+                      type="text"
+                      value={local.libraryCode}
+                      onChange={(e) => update('libraryCode', e.target.value)}
+                      placeholder="کد..."
+                      className="input-field"
+                    />
+                  </div>
+
+                  {/* ISBN */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">شابک (ISBN)</label>
+                    <input
+                      type="text"
+                      value={local.isbn}
+                      onChange={(e) => update('isbn', e.target.value)}
+                      placeholder="شابک..."
+                      className="input-field"
+                    />
+                  </div>
+
+                  {/* Availability dropdown */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">وضعیت موجودی</label>
+                    <select
+                      value={local.availability}
+                      onChange={(e) => update('availability', e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">همه وضعیت‌ها</option>
+                      <option value="available">موجود</option>
+                      <option value="borrowed">امانت رفته</option>
+                      <option value="reference">مرجع</option>
+                      <option value="restored">در حال مرمت</option>
+                    </select>
+                  </div>
+
+                  {/* Book type dropdown */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">نوع کتاب</label>
+                    <select
+                      value={local.bookType}
+                      onChange={(e) => update('bookType', e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">همه انواع</option>
+                      <option value="printed">چاپی</option>
+                      <option value="digital">دیجیتال</option>
+                      <option value="manuscript">نسخه خطی</option>
+                      <option value="lithographic">سنگی</option>
+                    </select>
+                  </div>
+
+                  {/* Tags */}
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-muted">برچسب‌ها</label>
+                    <select
+                      value={local.tags}
+                      onChange={(e) => update('tags', e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">همه برچسب‌ها</option>
+                      {filterOptions.tags.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-              <div className="mt-6 flex justify-center"><button onClick={onSearch} className="btn-primary"><Search className="h-4 w-4" />اعمال فیلترها و جستجو</button></div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Search button */}
+        <div className="flex justify-center pt-2">
+          <button type="submit" className="btn-primary min-w-[200px]">
+            <Search className="h-5 w-5" />
+            جستجو
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
