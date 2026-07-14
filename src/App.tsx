@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Library, ShoppingBag, BookOpen, SearchX, Settings, Network } from 'lucide-react';
+import { Library, ShoppingBag, BookOpen, SearchX, Network } from 'lucide-react';
 import type { Book, SearchFilters } from './types';
 import { emptyFilters } from './types';
 import { searchBooks, getBookById, getSimilarBooks } from './lib/api';
@@ -125,7 +125,6 @@ export default function App() {
   const [orgUnit, setOrgUnit] = useState<OrgUnit | undefined>(undefined);
   const [orgPersonLoading, setOrgPersonLoading] = useState(false);
 
-  const goAdmin = () => { history.pushState(null, '', '/admin'); setSection('admin'); };
   const backToSite = () => { history.pushState(null, '', '/'); setSection('landing'); setAuthed(false); };
 
   const openOrgPerson = useCallback(async (id: string) => {
@@ -148,37 +147,73 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
-      <div className="pointer-events-none fixed inset-0 pattern-bg opacity-60" />
-      <div className="pointer-events-none fixed top-0 right-0 h-[500px] w-[500px] rounded-full bg-emerald/5 blur-3xl" />
-      <div className="pointer-events-none fixed bottom-0 left-0 h-[400px] w-[400px] rounded-full bg-gold/5 blur-3xl" />
-      <header className="sticky top-0 z-30 glass border-b border-emerald/10">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <button onClick={() => setSection('landing')} className="group flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald text-white shadow-soft transition-transform group-hover:scale-105"><Library className="h-5 w-5" /></div>
-            <div className="text-right"><p className="font-display text-sm font-bold text-emerald-deep">بنیاد مهدویت استان خراسان رضوی</p><p className="text-[10px] text-muted">کتابخانه و فروشگاه</p></div>
+      {/* Background image */}
+      <div
+        className="pointer-events-none fixed inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage:
+            'url(https://images.pexels.com/photos/18709256/pexels-photo-18709256/free-photo-of-dark-interior-of-mosque.jpeg?auto=compress&w=1920&h=1080&dpr=1)',
+        }}
+      />
+      <div className="pointer-events-none fixed inset-0 bg-gradient-to-b from-emerald-deep/80 via-emerald-deep/70 to-emerald-dark/85" />
+
+      {/* Banner */}
+      <header className="sticky top-0 z-30 glass border-b border-white/20">
+        <div className="mx-auto flex max-w-6xl items-center justify-center px-4 py-4 sm:px-6">
+          <button onClick={() => setSection('landing')} className="group flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald text-white shadow-soft transition-transform group-hover:scale-105">
+              <Library className="h-6 w-6" />
+            </div>
+            <div className="text-right">
+              <p className="font-display text-base font-bold text-emerald-deep">بنیاد مهدویت خراسان رضوی</p>
+              <p className="text-[11px] text-muted">مرکز فرهنگی دیجیتال</p>
+            </div>
           </button>
-          <div className="flex items-center gap-2">
-            {section !== 'landing' && (
-              <div className="flex items-center gap-2">
-                <button onClick={() => setSection('library')} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${section === 'library' ? 'border-emerald bg-emerald text-white' : 'border-emerald/20 bg-white/60 text-emerald-deep hover:bg-emerald-soft'}`}><BookOpen className="h-3.5 w-3.5" />کتابخانه</button>
-                <button onClick={() => setSection('store')} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${section === 'store' ? 'border-gold bg-gold text-white' : 'border-emerald/20 bg-white/60 text-emerald-deep hover:bg-emerald-soft'}`}><ShoppingBag className="h-3.5 w-3.5" />فروشگاه</button>
-                <button onClick={() => setSection('organization')} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${section === 'organization' || section === 'org-person' ? 'border-emerald bg-emerald text-white' : 'border-emerald/20 bg-white/60 text-emerald-deep hover:bg-emerald-soft'}`}><Network className="h-3.5 w-3.5" />ساختار</button>
-              </div>
-            )}
-            <button onClick={goAdmin} className="inline-flex items-center gap-1.5 rounded-full border border-emerald/15 bg-white/50 px-3 py-1.5 text-xs text-muted transition-all hover:bg-emerald-soft hover:text-emerald-deep" title="پنل مدیریت"><Settings className="h-3.5 w-3.5" /><span className="hidden sm:inline">مدیریت</span></button>
-          </div>
         </div>
       </header>
-      <main className="relative z-10 mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <AnimatePresence mode="wait">
-          {section === 'landing' && (<motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}><LandingPage onSelect={setSection} /></motion.div>)}
-          {section === 'library' && (<motion.div key="library" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}><LibrarySection /></motion.div>)}
-          {section === 'store' && (<motion.div key="store" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}><StoreSection onBack={() => setSection('landing')} /></motion.div>)}
-          {section === 'organization' && (<motion.div key="organization" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}><OrgSection onPersonClick={openOrgPerson} /></motion.div>)}
-          {section === 'org-person' && (<motion.div key="org-person" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>{orgPersonLoading || !orgPerson ? (<div className="grid grid-cols-1 gap-8 lg:grid-cols-3 pt-8"><div className="skeleton h-48 w-full rounded-3xl lg:col-span-3" /><div className="skeleton h-64 w-full rounded-2xl lg:col-span-2" /><div className="skeleton h-64 w-full rounded-2xl" /></div>) : (<OrgPersonProfile member={orgPerson} unit={orgUnit} onBack={backToOrg} />)}</motion.div>)}
-        </AnimatePresence>
+
+      {/* Content card */}
+      <main className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <div className="rounded-3xl border border-white/30 bg-white/90 shadow-2xl backdrop-blur-md">
+          <div className="p-6 sm:p-8">
+            <AnimatePresence mode="wait">
+              {section === 'landing' && (
+                <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.35 }}>
+                  <LandingPage onSelect={setSection} />
+                </motion.div>
+              )}
+              {section === 'library' && (
+                <motion.div key="library" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  <LibrarySection />
+                </motion.div>
+              )}
+              {section === 'store' && (
+                <motion.div key="store" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  <StoreSection onBack={() => setSection('landing')} />
+                </motion.div>
+              )}
+              {section === 'organization' && (
+                <motion.div key="organization" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  <OrgSection onPersonClick={openOrgPerson} />
+                </motion.div>
+              )}
+              {section === 'org-person' && (
+                <motion.div key="org-person" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  {orgPersonLoading || !orgPerson ? (
+                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 pt-8">
+                      <div className="skeleton h-48 w-full rounded-3xl lg:col-span-3" />
+                      <div className="skeleton h-64 w-full rounded-2xl lg:col-span-2" />
+                      <div className="skeleton h-64 w-full rounded-2xl" />
+                    </div>
+                  ) : (
+                    <OrgPersonProfile member={orgPerson} unit={orgUnit} onBack={backToOrg} />
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
       </main>
-      <footer className="relative z-10 border-t border-emerald/10 bg-white/40 py-6"><div className="mx-auto max-w-6xl px-4 text-center sm:px-6"><p className="text-xs text-muted">مرکز فرهنگی دیجیتال — کتابخانه و فروشگاه</p></div></footer>
     </div>
   );
 }
