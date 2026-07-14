@@ -66,7 +66,7 @@ function LibrarySection() {
     <AnimatePresence mode="wait">
       {view === 'home' && (
         <motion.section key="lib-home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.4 }} className="flex min-h-[75vh] flex-col items-center justify-center">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, delay: 0.1 }} className="mb-8 text-center">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, delay: 0.1 }} className="mb-20 text-center">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald text-white shadow-card"><BookOpen className="h-8 w-8" /></div>
             <h1 className="font-display text-3xl font-bold text-emerald-deep sm:text-4xl">جستجوی کتابخانه</h1>
             <p className="mt-3 max-w-md text-sm text-muted">گنجینه‌ای از کتاب‌های فقهی، عرفانی، ادبی و تفسیری را جستجو و کشف کنید</p>
@@ -75,7 +75,7 @@ function LibrarySection() {
         </motion.section>
       )}
       {view === 'results' && (
-        <motion.section key="lib-results" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="pt-8">
+        <motion.section key="lib-results" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="pt-1">
           <SearchBox filters={filters} onFiltersChange={setFilters} onSearch={runSearch} advancedOpen={advancedOpen} onToggleAdvanced={() => setAdvancedOpen((v) => !v)} />
           <div className="mt-8 mb-5 flex items-center justify-between"><h2 className="font-display text-lg font-semibold text-emerald-deep">{loading ? 'در حال جستجو...' : hasSearched ? `${total} نتیجه یافت شد` : 'همه کتاب‌ها'}</h2></div>
           {loading && <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <BookCardSkeleton key={i} />)}</div>}
@@ -150,16 +150,6 @@ export default function App() {
       className="relative min-h-screen overflow-x-hidden"
       style={{ backgroundImage: 'url(https://mahdaviat.ir/static/mahdaviat-bg.png)', backgroundRepeat: 'repeat' }}
     >
-      {/* Banner image */}
-      <div className="w-full">
-        <img
-          src="https://mahdaviat.ir/static/header-mahdaviat.jpg"
-          alt="بنیاد فرهنگی حضرت مهدی موعود"
-          className="w-full object-cover"
-          style={{ maxHeight: '180px', objectPosition: 'center' }}
-        />
-      </div>
-
       {/* Sticky nav */}
       <nav className="sticky top-0 z-30 border-b border-emerald/20 bg-white/95 shadow-soft backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 py-2 sm:gap-4 sm:px-6">
@@ -186,6 +176,16 @@ export default function App() {
           })}
         </div>
       </nav>
+
+      {/* Banner image (same width as content card) */}
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
+        <img
+          src="https://mahdaviat.ir/static/header-mahdaviat.jpg"
+          alt="بنیاد فرهنگی حضرت مهدی موعود"
+          className="w-full rounded-2xl object-cover shadow-soft"
+          style={{ maxHeight: '180px', objectPosition: 'center' }}
+        />
+      </div>
 
       {/* Content card */}
       <main className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
