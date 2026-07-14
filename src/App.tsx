@@ -146,35 +146,50 @@ export default function App() {
   if (section === 'admin' && authed) return <AdminShell onBackToSite={backToSite} />;
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
-      {/* Background image */}
-      <div
-        className="pointer-events-none fixed inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            'url(https://images.pexels.com/photos/18709256/pexels-photo-18709256/free-photo-of-dark-interior-of-mosque.jpeg?auto=compress&w=1920&h=1080&dpr=1)',
-        }}
-      />
-      <div className="pointer-events-none fixed inset-0 bg-gradient-to-b from-emerald-deep/80 via-emerald-deep/70 to-emerald-dark/85" />
+    <div
+      className="relative min-h-screen overflow-x-hidden"
+      style={{ backgroundImage: 'url(https://mahdaviat.ir/static/mahdaviat-bg.png)', backgroundRepeat: 'repeat' }}
+    >
+      {/* Banner image */}
+      <div className="w-full">
+        <img
+          src="https://mahdaviat.ir/static/header-mahdaviat.jpg"
+          alt="بنیاد فرهنگی حضرت مهدی موعود"
+          className="w-full object-cover"
+          style={{ maxHeight: '180px', objectPosition: 'center' }}
+        />
+      </div>
 
-      {/* Banner */}
-      <header className="sticky top-0 z-30 glass border-b border-white/20">
-        <div className="mx-auto flex max-w-6xl items-center justify-center px-4 py-4 sm:px-6">
-          <button onClick={() => setSection('landing')} className="group flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald text-white shadow-soft transition-transform group-hover:scale-105">
-              <Library className="h-6 w-6" />
-            </div>
-            <div className="text-right">
-              <p className="font-display text-base font-bold text-emerald-deep">بنیاد مهدویت خراسان رضوی</p>
-              <p className="text-[11px] text-muted">مرکز فرهنگی دیجیتال</p>
-            </div>
-          </button>
+      {/* Sticky nav */}
+      <nav className="sticky top-0 z-30 border-b border-emerald/20 bg-white/95 shadow-soft backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 py-2 sm:gap-4 sm:px-6">
+          {[
+            { key: 'library' as const, label: 'کتابخانه دیجیتال', icon: <BookOpen className="h-4 w-4" /> },
+            { key: 'store' as const, label: 'فروشگاه', icon: <ShoppingBag className="h-4 w-4" /> },
+            { key: 'organization' as const, label: 'ساختار سازمانی', icon: <Network className="h-4 w-4" /> },
+          ].map((item) => {
+            const active = section === item.key || (item.key === 'organization' && section === 'org-person');
+            return (
+              <button
+                key={item.key}
+                onClick={() => setSection(item.key)}
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                  active
+                    ? 'bg-emerald text-white shadow-soft'
+                    : 'border border-emerald/20 bg-white text-emerald-deep hover:bg-emerald-soft'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
         </div>
-      </header>
+      </nav>
 
       {/* Content card */}
       <main className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <div className="rounded-3xl border border-white/30 bg-white/90 shadow-2xl backdrop-blur-md">
+        <div className="rounded-3xl border border-white/40 bg-white/92 shadow-2xl backdrop-blur-sm">
           <div className="p-6 sm:p-8">
             <AnimatePresence mode="wait">
               {section === 'landing' && (
