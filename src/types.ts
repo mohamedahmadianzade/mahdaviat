@@ -157,3 +157,66 @@ export const managementLevelStyles: Record<ManagementLevel, string> = {
 export interface OrgTreeNode extends OrgMember {
   children: OrgTreeNode[];
 }
+
+// ─── Moballeghin (مبلغین) types ──────────────────────────────────────────────
+
+export type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed';
+export type EducationLevel = 'under_diploma' | 'diploma' | 'associate' | 'bachelor' | 'master' | 'doctoral' | 'hawzeh_1' | 'hawzeh_2' | 'hawzeh_3' | 'hawzeh_kharij';
+
+export const maritalStatusLabels: Record<MaritalStatus, string> = {
+  single: 'مجرد',
+  married: 'متاهل',
+  divorced: 'مطلقه',
+  widowed: 'بیوه',
+};
+
+export const educationLevelLabels: Record<EducationLevel, string> = {
+  under_diploma: 'زیر دیپلم',
+  diploma: 'دیپلم',
+  associate: 'فوق دیپلم',
+  bachelor: 'کارشناسی',
+  master: 'کارشناسی ارشد',
+  doctoral: 'دکترا',
+  hawzeh_1: 'حوزوی سطح ۱',
+  hawzeh_2: 'حوزوی سطح ۲',
+  hawzeh_3: 'حوزوی سطح ۳',
+  hawzeh_kharij: 'حوزوی خارج',
+};
+
+export const birthYears: number[] = Array.from({ length: 80 }, (_, i) => 1400 - i);
+
+export interface Moballagh {
+  id: string;
+  // اطلاعات شخصی
+  fullName: string;
+  fatherName: string;
+  idCardNumber: string;
+  nationalCode: string;
+  // اطلاعات تکمیلی
+  birthYear: string;
+  birthPlace: string;
+  educationLevel: EducationLevel | '';
+  maritalStatus: MaritalStatus | '';
+  // اطلاعات تماس و بانکی
+  phone: string;
+  bankAccountNumber: string;
+  address: string;
+  // metadata
+  registeredAt: string;
+  active: boolean;
+}
+
+export const emptyMoballagh = (): Omit<Moballagh, 'id' | 'registeredAt'> => ({
+  fullName: '',
+  fatherName: '',
+  idCardNumber: '',
+  nationalCode: '',
+  birthYear: '',
+  birthPlace: '',
+  educationLevel: '',
+  maritalStatus: '',
+  phone: '',
+  bankAccountNumber: '',
+  address: '',
+  active: true,
+});

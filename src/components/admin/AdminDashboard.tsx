@@ -7,11 +7,13 @@ import {
   FolderTree,
   Users,
   Network,
+  Mic,
   TrendingUp,
 } from 'lucide-react';
 import { adminGetBookStats } from '../../lib/api';
 import { adminGetStats } from '../../lib/storeApi';
 import { adminGetOrgStats } from '../../lib/orgApi';
+import { adminGetMoballeghinStats } from '../../lib/moballeghinApi';
 
 interface DashboardStats {
   totalBooks: number;
@@ -21,6 +23,8 @@ interface DashboardStats {
   totalOrgMembers: number;
   activeMembers: number;
   totalOrgUnits: number;
+  totalMoballeghin: number;
+  activeMoballeghin: number;
 }
 
 interface StatCardProps {
@@ -67,10 +71,11 @@ export default function AdminDashboard() {
     (async () => {
       setLoading(true);
       try {
-        const [bookStats, storeStats, orgStats] = await Promise.all([
+        const [bookStats, storeStats, orgStats, mobStats] = await Promise.all([
           adminGetBookStats(),
           adminGetStats(),
           adminGetOrgStats(),
+          adminGetMoballeghinStats(),
         ]);
         if (!active) return;
         setStats({
@@ -81,6 +86,8 @@ export default function AdminDashboard() {
           totalOrgMembers: orgStats.totalMembers,
           activeMembers: orgStats.activeMembers,
           totalOrgUnits: orgStats.totalUnits,
+          totalMoballeghin: mobStats.total,
+          activeMoballeghin: mobStats.active,
         });
       } finally {
         if (active) setLoading(false);
@@ -99,6 +106,7 @@ export default function AdminDashboard() {
     { label: 'اعضای سازمان', value: stats?.totalOrgMembers ?? 0, icon: Users, gradient: '', iconBg: 'bg-teal/10 text-teal', delay: 0.2, loading },
     { label: 'اعضای فعال', value: stats?.activeMembers ?? 0, icon: CheckCircle2, gradient: '', iconBg: 'bg-emerald-soft text-emerald-deep', delay: 0.25, loading },
     { label: 'واحدهای سازمانی', value: stats?.totalOrgUnits ?? 0, icon: Network, gradient: '', iconBg: 'bg-teal/10 text-teal-dark', delay: 0.3, loading },
+    { label: 'مبلغین', value: stats?.totalMoballeghin ?? 0, icon: Mic, gradient: '', iconBg: 'bg-emerald-soft text-emerald', delay: 0.35, loading },
   ];
 
   return (
@@ -149,10 +157,16 @@ export default function AdminDashboard() {
               <span className="text-muted">دسته‌بندی محصولات</span>
               <span className="font-medium text-emerald-deep">{stats?.totalCategories ?? 0} دسته‌بندی</span>
             </li>
-            <li className="flex items-center justify-between">
+            <li className="flex items-center justify-between border-b border-emerald/5 pb-2">
               <span className="text-muted">ساختار سازمانی</span>
               <span className="font-medium text-emerald-deep">
                 {stats?.activeMembers ?? 0} عضو فعال در {stats?.totalOrgUnits ?? 0} واحد
+              </span>
+            </li>
+            <li className="flex items-center justify-between">
+              <span className="text-muted">مبلغین</span>
+              <span className="font-medium text-emerald-deep">
+                {stats?.totalMoballeghin ?? 0} مبلغ ثبت‌نام شده
               </span>
             </li>
           </ul>

@@ -8,6 +8,7 @@ import {
   Settings,
   Network,
   Users,
+  Mic,
   ArrowRight,
   Shield,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ import AdminProductCategories from './AdminProductCategories';
 import AdminSettings from './AdminSettings';
 import AdminOrgUnits from './AdminOrgUnits';
 import AdminOrgMembers from './AdminOrgMembers';
+import AdminMoballeghin from './AdminMoballeghin';
 
 export type AdminSection =
   | 'dashboard'
@@ -26,7 +28,8 @@ export type AdminSection =
   | 'categories'
   | 'settings'
   | 'org-units'
-  | 'org-members';
+  | 'org-members'
+  | 'moballeghin';
 
 interface AdminLayoutProps {
   onBackToSite: () => void;
@@ -46,6 +49,7 @@ const sidebarItems: SidebarItem[] = [
   { key: 'settings', label: 'تنظیمات فروشگاه', icon: Settings },
   { key: 'org-units', label: 'واحدهای سازمانی', icon: Network },
   { key: 'org-members', label: 'اعضای سازمان', icon: Users },
+  { key: 'moballeghin', label: 'مبلغین', icon: Mic },
 ];
 
 export default function AdminLayout({ onBackToSite }: AdminLayoutProps) {
@@ -178,6 +182,7 @@ export default function AdminLayout({ onBackToSite }: AdminLayoutProps) {
               {section === 'settings' && <AdminSettings />}
               {section === 'org-units' && <AdminOrgUnits />}
               {section === 'org-members' && <AdminOrgMembers />}
+              {section === 'moballeghin' && <AdminMoballeghin />}
             </motion.div>
           </AnimatePresence>
         </main>
