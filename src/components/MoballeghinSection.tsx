@@ -1,21 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, User, Phone, CreditCard, MapPin, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
+import { Mic, User, Phone, CreditCard, MapPin, CheckCircle2, ArrowRight, Loader2, Search, Filter, Table2, Plus, X } from 'lucide-react';
 import type { MaritalStatus, EducationLevel, Moballagh } from '../types';
 import { maritalStatusLabels, educationLevelLabels, birthYears, emptyMoballagh } from '../types';
-import { registerMoballagh } from '../lib/moballeghinApi';
+import { registerMoballagh, getMoballeghin } from '../lib/moballeghinApi';
 
 interface MoballeghinSectionProps {
   onBack: () => void;
 }
 
 type FormState = Omit<Moballagh, 'id' | 'registeredAt'>;
+type View = 'form' | 'list';
 
 export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) {
+  const [view, setView] = useState<View>('form');
   const [form, setForm] = useState<FormState>(emptyMoballagh());
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [list, setList] = useState<Moballagh[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+  // Filters
+  const [search, setSearch] = useState('');
+  const [filterEducation, setFilterEducation] = useState('');
+  const [filterMarital, setFilterMarital] = useState('');
+  const [filterBirthYear, setFilterBirthYear] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -35,20 +44,52 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
     return Object.keys(e).length === 0;
   };
 
+  const loadList = useCallback(async () => {
+    setListLoading(true);
+    try {
+      const data = await getMoballeghin();
+      setList(data);
+    } catch {
+      setList([]);
+    } finally {
+      setListLoading(false);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
     try {
       await registerMoballagh(form);
-      setSuccess(true);
       setForm(emptyMoballagh());
+      await loadList();
+      setView('list');
     } catch {
       setErrors({ submit: 'خطا در ثبت اطلاعات. لطفاً دوباره تلاش کنید.' });
     } finally {
       setSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (view === 'list' && list.length === 0) loadList();
+  }, [view, list.length, loadList]);
+
+  const filtered = list.filter((m) => {
+    const q = search.trim().toLowerCase();
+    if (q && !(m.fullName.toLowerCase().includes(q) || m.fatherName.toLowerCase().includes(q) || m.nationalCode.includes(q) || m.phone.includes(q) || m.birthPlace.toLowerCase().includes(q))) return false;
+    if (filterEducation && m.educationLevel !== filterEducation) return false;
+    if (filterMarital && m.maritalStatus !== filterMarital) return false;
+    if (filterBirthYear && m.birthYear !== filterBirthYear) return false;
+    return true;
+  });
+
+  const resetFilters = () => {
+    setSearch(''); setFilterEducation(''); setFilterMarital(''); setFilterBirthYear('');
+  };
+
+  const activeFilterCount = [filterEducation, filterMarital, filterBirthYear].filter(Boolean).length;
 
   return (
     <div>
@@ -69,28 +110,166 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
         </button>
       </div>
 
+      {/* View toggle */}
+      <div className="mb-5 flex gap-2">
+        <button
+          onClick={() => setView('form')}
+          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition-all ${
+            view === 'form' ? 'bg-emerald text-white shadow-soft' : 'border border-emerald/20 bg-white text-emerald-deep hover:bg-emerald-soft'
+          }`}
+        >
+          <Plus className="h-4 w-4" />
+          ثبت‌نام جدید
+        </button>
+        <button
+          onClick={() => setView('list')}
+          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition-all ${
+            view === 'list' ? 'bg-emerald text-white shadow-soft' : 'border border-emerald/20 bg-white text-emerald-deep hover:bg-emerald-soft'
+          }`}
+        >
+          <Table2 className="h-4 w-4" />
+          لیست مبلغین
+          {list.length > 0 && (
+            <span className="rounded-full bg-emerald-deep/20 px-1.5 py-0.5 text-[10px]">{list.length.toLocaleString('fa-IR')}</span>
+          )}
+        </button>
+      </div>
+
       <AnimatePresence mode="wait">
-        {success ? (
+        {view === 'list' ? (
           <motion.div
-            key="success"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            key="list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col items-center justify-center py-16 text-center"
+            className="space-y-4"
           >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-              className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-soft text-emerald"
-            >
-              <CheckCircle2 className="h-10 w-10" />
-            </motion.div>
-            <h3 className="mb-2 font-display text-xl font-bold text-emerald-deep">اطلاعات شما با موفقیت ثبت شد</h3>
-            <p className="mb-6 text-sm text-muted">به زودی با شما تماس خواهیم گرفت.</p>
-            <button onClick={() => setSuccess(false)} className="btn-primary">
-              ثبت درخواست جدید
-            </button>
+            {/* Search & filter bar */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-mutedLight" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="جستجو بر اساس نام، کد ملی، تلفن، محل تولد..."
+                  className="input-field pr-12"
+                />
+              </div>
+              <button
+                onClick={() => setShowFilters((v) => !v)}
+                className={`btn-ghost whitespace-nowrap ${showFilters || activeFilterCount > 0 ? 'border-emerald bg-emerald-soft text-emerald-deep' : ''}`}
+              >
+                <Filter className="h-4 w-4" />
+                فیلترها
+                {activeFilterCount > 0 && (
+                  <span className="rounded-full bg-emerald px-1.5 py-0.5 text-[10px] text-white">{activeFilterCount.toLocaleString('fa-IR')}</span>
+                )}
+              </button>
+              {activeFilterCount > 0 && (
+                <button onClick={resetFilters} className="btn-ghost whitespace-nowrap text-xs text-rose-600 hover:bg-rose-50 hover:border-rose-200">
+                  <X className="h-4 w-4" />
+                  پاک کردن
+                </button>
+              )}
+            </div>
+
+            {/* Expandable filters */}
+            <AnimatePresence>
+              {showFilters && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="grid grid-cols-1 gap-3 rounded-2xl border border-emerald/10 bg-white/60 p-4 sm:grid-cols-3">
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-muted">سطح تحصیلات</label>
+                      <select className="input-field" value={filterEducation} onChange={(e) => setFilterEducation(e.target.value)}>
+                        <option value="">همه</option>
+                        {(Object.keys(educationLevelLabels) as EducationLevel[]).map((k) => (
+                          <option key={k} value={k}>{educationLevelLabels[k]}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-muted">وضعیت تأهل</label>
+                      <select className="input-field" value={filterMarital} onChange={(e) => setFilterMarital(e.target.value)}>
+                        <option value="">همه</option>
+                        {(Object.keys(maritalStatusLabels) as MaritalStatus[]).map((k) => (
+                          <option key={k} value={k}>{maritalStatusLabels[k]}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-muted">سال تولد</label>
+                      <select className="input-field" value={filterBirthYear} onChange={(e) => setFilterBirthYear(e.target.value)}>
+                        <option value="">همه</option>
+                        {birthYears.map((y) => (
+                          <option key={y} value={String(y)}>{y.toLocaleString('fa-IR')}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Result count */}
+            <p className="text-xs text-muted">
+              {filtered.length.toLocaleString('fa-IR')} مبلغ نمایش داده شده است
+              {filtered.length !== list.length && ` (از مجموع ${list.length.toLocaleString('fa-IR')} نفر)`}
+            </p>
+
+            {/* Table */}
+            {listLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="skeleton h-14 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-soft text-emerald">
+                  <Table2 className="h-8 w-8" />
+                </div>
+                <p className="text-sm text-muted">مبلغی یافت نشد</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-2xl border border-emerald/10 bg-white shadow-soft">
+                <table className="w-full text-right text-sm">
+                  <thead>
+                    <tr className="border-b border-emerald/10 bg-emerald-soft/30 text-xs text-muted">
+                      <th className="px-4 py-3 font-medium">ردیف</th>
+                      <th className="px-4 py-3 font-medium">نام و نام خانوادگی</th>
+                      <th className="px-4 py-3 font-medium">نام پدر</th>
+                      <th className="px-4 py-3 font-medium">کد ملی</th>
+                      <th className="px-4 py-3 font-medium">تلفن</th>
+                      <th className="px-4 py-3 font-medium">سال تولد</th>
+                      <th className="px-4 py-3 font-medium">محل تولد</th>
+                      <th className="px-4 py-3 font-medium">تحصیلات</th>
+                      <th className="px-4 py-3 font-medium">تأهل</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((m, idx) => (
+                      <tr key={m.id} className="border-b border-emerald/5 transition-colors hover:bg-emerald-soft/20">
+                        <td className="px-4 py-3 text-mutedLight">{(idx + 1).toLocaleString('fa-IR')}</td>
+                        <td className="px-4 py-3 font-medium text-emerald-deep">{m.fullName || '—'}</td>
+                        <td className="px-4 py-3 text-muted">{m.fatherName || '—'}</td>
+                        <td className="px-4 py-3 text-muted">{m.nationalCode || '—'}</td>
+                        <td className="px-4 py-3 text-muted" dir="ltr">{m.phone || '—'}</td>
+                        <td className="px-4 py-3 text-muted">{m.birthYear ? Number(m.birthYear).toLocaleString('fa-IR') : '—'}</td>
+                        <td className="px-4 py-3 text-muted">{m.birthPlace || '—'}</td>
+                        <td className="px-4 py-3 text-muted">{m.educationLevel ? educationLevelLabels[m.educationLevel as EducationLevel] : '—'}</td>
+                        <td className="px-4 py-3 text-muted">{m.maritalStatus ? maritalStatusLabels[m.maritalStatus as MaritalStatus] : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </motion.div>
         ) : (
           <motion.form

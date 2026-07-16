@@ -41,6 +41,11 @@ export async function adminDeleteMoballagh(id: string): Promise<void> {
   saveJSON(STORAGE_KEYS.moballeghin, getAll().filter((m) => m.id !== id));
 }
 
+export async function getMoballeghin(): Promise<Moballagh[]> {
+  await delay(300);
+  return [...getAll()].sort((a, b) => b.registeredAt.localeCompare(a.registeredAt));
+}
+
 export async function adminGetMoballeghinStats() {
   const all = getAll();
   return { total: all.length, active: all.filter((m) => m.active).length };
