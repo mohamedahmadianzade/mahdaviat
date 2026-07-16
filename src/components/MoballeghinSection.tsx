@@ -13,7 +13,7 @@ type FormState = Omit<Moballagh, 'id' | 'registeredAt'>;
 type View = 'form' | 'list' | 'detail';
 
 export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) {
-  const [view, setView] = useState<View>('form');
+  const [view, setView] = useState<View>('list');
   const [form, setForm] = useState<FormState>(emptyMoballagh());
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -153,16 +153,7 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
       </div>
 
       {/* View toggle */}
-      <div className="mb-5 flex gap-2">
-        <button
-          onClick={() => setView('form')}
-          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition-all ${
-            view === 'form' ? 'bg-emerald text-white shadow-soft' : 'border border-emerald/20 bg-white text-emerald-deep hover:bg-emerald-soft'
-          }`}
-        >
-          <Plus className="h-4 w-4" />
-          ثبت‌نام جدید
-        </button>
+      <div className="mb-5 flex items-center justify-between gap-2">
         <button
           onClick={() => setView('list')}
           className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition-all ${
@@ -174,6 +165,15 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
           {list.length > 0 && (
             <span className="rounded-full bg-emerald-deep/20 px-1.5 py-0.5 text-[10px]">{list.length.toLocaleString('fa-IR')}</span>
           )}
+        </button>
+        <button
+          onClick={() => setView('form')}
+          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition-all ${
+            view === 'form' ? 'bg-emerald text-white shadow-soft' : 'border border-emerald/20 bg-white text-emerald-deep hover:bg-emerald-soft'
+          }`}
+        >
+          <Plus className="h-4 w-4" />
+          ثبت‌نام جدید
         </button>
       </div>
 
@@ -418,7 +418,6 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
                       <th className="px-4 py-3 font-medium">محل تولد</th>
                       <th className="px-4 py-3 font-medium">تحصیلات</th>
                       <th className="px-4 py-3 font-medium">تأهل</th>
-                      <th className="px-4 py-3 font-medium">تأهل</th>
                       <th className="px-4 py-3 font-medium">عملیات</th>
                     </tr>
                   </thead>
@@ -426,12 +425,7 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
                     {filtered.map((m, idx) => (
                       <tr key={m.id} className="border-b border-emerald/5 transition-colors hover:bg-emerald-soft/20">
                         <td className="px-4 py-3 text-mutedLight">{(idx + 1).toLocaleString('fa-IR')}</td>
-                        <td className="px-4 py-3">
-                          <button onClick={() => openDetail(m)} className="flex items-center gap-1.5 font-medium text-emerald-deep transition-colors hover:text-emerald">
-                            <Pencil className="h-3.5 w-3.5 text-mutedLight" />
-                            {m.fullName || '—'}
-                          </button>
-                        </td>
+                        <td className="px-4 py-3 font-medium text-emerald-deep">{m.fullName || '—'}</td>
                         <td className="px-4 py-3 text-muted">{m.fatherName || '—'}</td>
                         <td className="px-4 py-3 text-muted">{m.nationalCode || '—'}</td>
                         <td className="px-4 py-3 text-muted" dir="ltr">{m.phone || '—'}</td>
@@ -440,9 +434,14 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
                         <td className="px-4 py-3 text-muted">{m.educationLevel ? educationLevelLabels[m.educationLevel as EducationLevel] : '—'}</td>
                         <td className="px-4 py-3 text-muted">{m.maritalStatus ? maritalStatusLabels[m.maritalStatus as MaritalStatus] : '—'}</td>
                         <td className="px-4 py-3">
-                          <button onClick={() => setDeleteId(m.id)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-rose-50 hover:text-rose-600">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => openDetail(m)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-emerald-soft hover:text-emerald-deep" title="ویرایش">
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => setDeleteId(m.id)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-rose-50 hover:text-rose-600" title="حذف">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
