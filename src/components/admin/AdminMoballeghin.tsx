@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  CalendarDays,
 } from 'lucide-react';
 import type { Moballagh, MaritalStatus, EducationLevel } from '../../types';
 import { maritalStatusLabels, educationLevelLabels, birthYears, emptyMoballagh } from '../../types';
@@ -21,7 +22,11 @@ import {
 
 type FormState = Moballagh;
 
-export default function AdminMoballeghin() {
+interface AdminMoballeghinProps {
+  onOpenActivities?: (missionaryId: string) => void;
+}
+
+export default function AdminMoballeghin({ onOpenActivities }: AdminMoballeghinProps) {
   const [list, setList] = useState<Moballagh[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -162,6 +167,13 @@ export default function AdminMoballeghin() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onOpenActivities?.(m.id)}
+                        title="فعالیت‌های تبلیغی"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-emerald-soft hover:text-emerald-deep"
+                      >
+                        <CalendarDays className="h-4 w-4" />
+                      </button>
                       <button onClick={() => openEdit(m)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-emerald-soft hover:text-emerald-deep">
                         <Pencil className="h-4 w-4" />
                       </button>

@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Phone, MessageCircle, Tag, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, Phone, Tag, ShoppingBag, ChevronLeft, ChevronRight, Loader2, CheckCircle2, ShoppingCart } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import type { Product, ProductCategory, StoreSettings } from '../types';
+import { placeOrder } from '../lib/ordersApi';
 import ProductCard from './ProductCard';
 
 interface ProductDetailsProps {
@@ -31,9 +32,45 @@ export default function ProductDetails({ product, category, similar, categoryMap
     return () => clearInterval(t);
   }, [next, images.length]);
 
+  // Order form state
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [orderForm, setOrderForm] = useState({ customer_name: '', customer_phone: '', quantity: 1, notes: '' });
+  const [orderSubmitting, setOrderSubmitting] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [orderError, setOrderError] = useState('');
+
+  const handleOrderSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orderForm.customer_name.trim() || !orderForm.customer_phone.trim()) {
+      setOrderError('نام و شماره تماس الزامی است');
+      return;
+    }
+    setOrderSubmitting(true);
+    setOrderError('');
+    try {
+      await placeOrder({
+        product_id: product.id,
+        product_name: product.name,
+        customer_name: orderForm.customer_name,
+        customer_phone: orderForm.customer_phone,
+        quantity: orderForm.quantity,
+        notes: orderForm.notes,
+      });
+      setOrderSuccess(true);
+      setOrderForm({ customer_name: '', customer_phone: '', quantity: 1, notes: '' });
+      setTimeout(() => {
+        setShowOrderForm(false);
+        setOrderSuccess(false);
+      }, 2500);
+    } catch {
+      setOrderError('خطا در ثبت سفارش. لطفاً دوباره تلاش کنید.');
+    } finally {
+      setOrderSubmitting(false);
+    }
+  };
+
   const handleContact = () => {
-    if (settings.contactMode === 'whatsapp') window.open(`https://wa.me/${settings.whatsapp}`, '_blank');
-    else window.open(`tel:${settings.phone}`);
+    if (settings.phone) window.open(`tel:${settings.phone}`);
   };
 
   return (
@@ -115,13 +152,108 @@ export default function ProductDetails({ product, category, similar, categoryMap
               <div className="flex flex-wrap gap-2">{product.keywords.map((k) => <span key={k} className="rounded-full border border-gold/30 bg-gold-soft/40 px-3 py-1 text-xs text-gold-deep">{k}</span>)}</div>
             </div>
           )}
-          <div className="mt-6 rounded-2xl border border-emerald/15 bg-emerald-soft/50 p-4">
-            <p className="mb-3 text-sm font-medium text-emerald-deep">اطلاعات تماس</p>
-            <button onClick={handleContact} className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-emerald px-4 py-3 text-sm font-medium text-white shadow-soft transition-all hover:bg-emerald-deep hover:shadow-card">
-              {settings.contactMode === 'whatsapp' ? <MessageCircle className="h-4 w-4" /> : <Phone className="h-4 w-4" />}
-              {settings.contactButtonText}
-            </button>
-            <p className="mt-2 text-center text-xs text-muted">{settings.contactMode === 'whatsapp' ? settings.whatsapp : settings.phone}</p>
+          <div className="mt-6 space-y-3">
+            {/* Order button */}
+            {!showOrderForm && (
+              <button
+                onClick={() => setShowOrderForm(true)}
+                className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-emerald px-4 py-3 text-sm font-medium text-white shadow-soft transition-all hover:bg-emerald-deep hover:shadow-card"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                ثبت سفارش
+              </button>
+            )}
+
+            {/* Order form */}
+            <AnimatePresence>
+              {showOrderForm && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="rounded-2xl border border-emerald/15 bg-white/70 p-4">
+                    <h4 className="mb-3 flex items-center gap-2 text-sm font-bold text-emerald-deep">
+                      <ShoppingCart className="h-4 w-4" />
+                      ثبت سفارش محصول
+                    </h4>
+                    {orderSuccess ? (
+                      <div className="flex flex-col items-center gap-2 py-6 text-center">
+                        <CheckCircle2 className="h-10 w-10 text-emerald" />
+                        <p className="text-sm font-medium text-emerald-deep">سفارش شما با موفقیت ثبت شد</p>
+                        <p className="text-xs text-muted">به زودی با شما تماس خواهیم گرفت</p>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleOrderSubmit} className="space-y-3">
+                        <div>
+                          <label className="mb-1 block text-xs text-muted">نام و نام خانوادگی *</label>
+                          <input
+                            type="text"
+                            value={orderForm.customer_name}
+                            onChange={(e) => setOrderForm({ ...orderForm, customer_name: e.target.value })}
+                            className="input-field"
+                            placeholder="نام خود را وارد کنید"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs text-muted">شماره تماس *</label>
+                          <input
+                            type="tel"
+                            value={orderForm.customer_phone}
+                            onChange={(e) => setOrderForm({ ...orderForm, customer_phone: e.target.value })}
+                            className="input-field"
+                            placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+                            dir="ltr"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs text-muted">تعداد</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={orderForm.quantity}
+                            onChange={(e) => setOrderForm({ ...orderForm, quantity: parseInt(e.target.value) || 1 })}
+                            className="input-field"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs text-muted">توضیحات</label>
+                          <textarea
+                            value={orderForm.notes}
+                            onChange={(e) => setOrderForm({ ...orderForm, notes: e.target.value })}
+                            className="input-field resize-none"
+                            rows={2}
+                            placeholder="توضیحات اختیاری..."
+                          />
+                        </div>
+                        {orderError && <p className="text-xs text-rose-500">{orderError}</p>}
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => setShowOrderForm(false)} className="btn-ghost flex-1">
+                            انصراف
+                          </button>
+                          <button type="submit" disabled={orderSubmitting} className="btn-primary flex-1">
+                            {orderSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+                            {orderSubmitting ? 'در حال ثبت...' : 'تأیید سفارش'}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Phone contact */}
+            <div className="rounded-2xl border border-emerald/15 bg-emerald-soft/50 p-4">
+              <p className="mb-2 text-sm font-medium text-emerald-deep">{settings.contactButtonText}</p>
+              <div className="flex items-center justify-center gap-2.5">
+                <Phone className="h-5 w-5 text-emerald" />
+                <a href={`tel:${settings.phone}`} className="text-lg font-bold text-emerald-deep" dir="ltr">
+                  {settings.phone}
+                </a>
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>

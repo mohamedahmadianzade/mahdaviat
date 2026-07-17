@@ -1,20 +1,80 @@
 import type { Product, ProductCategory, ProductSearchFilters, StoreSettings } from '../types';
-import { defaultProducts, defaultCategories } from '../data/products';
 import { defaultSettings } from '../types';
-import { loadJSON, saveJSON, STORAGE_KEYS } from './storage';
+import { supabase } from './supabaseClient';
 
-const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 const matches = (field: string | undefined, term: string) => !term || (!!field && normalize(field).includes(normalize(term)));
 const matchesAny = (arr: string[] | undefined, term: string) => !term || (!!arr?.length && arr.some((k) => normalize(k).includes(normalize(term))));
 
-function getProducts(): Product[] { return loadJSON<Product[]>(STORAGE_KEYS.products, defaultProducts); }
-function getCategoriesData(): ProductCategory[] { return loadJSON<ProductCategory[]>(STORAGE_KEYS.productCategories, defaultCategories); }
-function getSettingsData(): StoreSettings { return loadJSON<StoreSettings>(STORAGE_KEYS.storeSettings, defaultSettings); }
+type ProductRow = Omit<Product, 'images' | 'keywords' | 'similarIds' | 'categoryId'> & {
+  category_id: string;
+  images: string[];
+  keywords: string[];
+  similar_ids: string[];
+  created_at: string;
+  updated_at: string;
+};
+
+const fromProductRow = (r: ProductRow): Product => ({
+  id: r.id,
+  name: r.name,
+  categoryId: r.category_id,
+  images: r.images ?? [],
+  shortDescription: r.short_description,
+  description: r.description,
+  price: r.price,
+  keywords: r.keywords ?? [],
+  order: r.order,
+  active: r.active,
+  similarIds: r.similar_ids ?? [],
+});
+
+const toProductRow = (p: Product): Omit<ProductRow, 'created_at' | 'updated_at'> => ({
+  id: p.id,
+  name: p.name,
+  category_id: p.categoryId,
+  images: p.images,
+  short_description: p.shortDescription,
+  description: p.description,
+  price: p.price,
+  keywords: p.keywords,
+  order: p.order,
+  active: p.active,
+  similar_ids: p.similarIds ?? [],
+});
+
+type CategoryRow = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  order: number;
+  active: boolean;
+};
+
+const fromCategoryRow = (r: CategoryRow): ProductCategory => ({
+  id: r.id, name: r.name, slug: r.slug, description: r.description, order: r.order, active: r.active,
+});
+
+const toCategoryRow = (c: ProductCategory) => ({
+  id: c.id, name: c.name, slug: c.slug, description: c.description, order: c.order, active: c.active,
+});
+
+async function getProducts(): Promise<Product[]> {
+  const { data, error } = await supabase.from('products').select('*');
+  if (error) throw error;
+  return (data as ProductRow[]).map(fromProductRow);
+}
+
+async function getCategoriesData(): Promise<ProductCategory[]> {
+  const { data, error } = await supabase.from('product_categories').select('*');
+  if (error) throw error;
+  return (data as CategoryRow[]).map(fromCategoryRow);
+}
 
 export async function searchProducts(filters: ProductSearchFilters) {
-  await delay(300);
-  const results = getProducts().filter((p) => p.active).sort((a, b) => a.order - b.order).filter((p) => {
+  const all = await getProducts();
+  const results = all.filter((p) => p.active).sort((a, b) => a.order - b.order).filter((p) => {
     if (filters.categoryId && p.categoryId !== filters.categoryId) return false;
     const q = filters.query.trim();
     if (!q) return true;
@@ -24,67 +84,94 @@ export async function searchProducts(filters: ProductSearchFilters) {
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  await delay(200);
-  return getProducts().find((p) => p.id === id) ?? null;
+  const { data, error } = await supabase.from('products').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data ? fromProductRow(data as ProductRow) : null;
 }
 
 export async function getSimilarProducts(product: Product): Promise<Product[]> {
-  const products = getProducts();
-  return (product.similarIds ?? []).map((id) => products.find((p) => p.id === id)).filter((p): p is Product => Boolean(p));
+  const all = await getProducts();
+  return (product.similarIds ?? []).map((id) => all.find((p) => p.id === id)).filter((p): p is Product => Boolean(p));
 }
 
 export async function getCategories(): Promise<ProductCategory[]> {
-  await delay(100);
-  return [...getCategoriesData()].sort((a, b) => a.order - b.order);
+  const cats = await getCategoriesData();
+  return [...cats].sort((a, b) => a.order - b.order);
 }
 
 export async function getActiveCategories(): Promise<ProductCategory[]> {
-  await delay(100);
-  return [...getCategoriesData()].filter((c) => c.active).sort((a, b) => a.order - b.order);
+  const cats = await getCategoriesData();
+  return [...cats].filter((c) => c.active).sort((a, b) => a.order - b.order);
 }
 
-export async function getSettings(): Promise<StoreSettings> { return { ...getSettingsData() }; }
+export async function getSettings(): Promise<StoreSettings> {
+  const { data, error } = await supabase.from('store_settings').select('*').eq('id', 1).maybeSingle();
+  if (error) throw error;
+  if (!data) return { ...defaultSettings };
+  const r = data as Partial<StoreSettings>;
+  return {
+    storeName: r.store_name ?? defaultSettings.storeName,
+    storeTagline: r.store_tagline ?? defaultSettings.storeTagline,
+    contactMode: (r.contact_mode as StoreSettings['contactMode']) ?? defaultSettings.contactMode,
+    phone: r.phone ?? defaultSettings.phone,
+    whatsapp: r.whatsapp ?? defaultSettings.whatsapp,
+    contactButtonText: r.contact_button_text ?? defaultSettings.contactButtonText,
+  };
+}
 
 // ─── Admin CRUD ──────────────────────────────────────────────────────────────
 
 export async function adminGetCategories(): Promise<ProductCategory[]> {
-  return [...getCategoriesData()].sort((a, b) => a.order - b.order);
+  const cats = await getCategoriesData();
+  return [...cats].sort((a, b) => a.order - b.order);
 }
 
 export async function adminSaveCategory(cat: ProductCategory): Promise<ProductCategory> {
-  const cats = getCategoriesData();
-  const idx = cats.findIndex((c) => c.id === cat.id);
-  if (idx >= 0) cats[idx] = cat; else cats.push(cat);
-  saveJSON(STORAGE_KEYS.productCategories, cats);
-  return { ...cat };
+  const { data, error } = await supabase.from('product_categories').upsert(toCategoryRow(cat)).select('*').maybeSingle();
+  if (error) throw error;
+  return data ? fromCategoryRow(data as CategoryRow) : cat;
 }
 
 export async function adminDeleteCategory(id: string): Promise<void> {
-  saveJSON(STORAGE_KEYS.productCategories, getCategoriesData().filter((c) => c.id !== id));
+  const { error } = await supabase.from('product_categories').delete().eq('id', id);
+  if (error) throw error;
 }
 
 export async function adminGetProducts(): Promise<Product[]> {
-  return [...getProducts()].sort((a, b) => a.order - b.order);
+  const all = await getProducts();
+  return [...all].sort((a, b) => a.order - b.order);
 }
 
 export async function adminSaveProduct(product: Product): Promise<Product> {
-  const products = getProducts();
-  const idx = products.findIndex((p) => p.id === product.id);
-  if (idx >= 0) products[idx] = product; else products.push(product);
-  saveJSON(STORAGE_KEYS.products, products);
-  return { ...product };
+  const { data, error } = await supabase.from('products').upsert(toProductRow(product)).select('*').maybeSingle();
+  if (error) throw error;
+  return data ? fromProductRow(data as ProductRow) : product;
 }
 
 export async function adminDeleteProduct(id: string): Promise<void> {
-  saveJSON(STORAGE_KEYS.products, getProducts().filter((p) => p.id !== id));
+  const { error } = await supabase.from('products').delete().eq('id', id);
+  if (error) throw error;
 }
 
-export async function adminGetSettings(): Promise<StoreSettings> { return { ...getSettingsData() }; }
-export async function adminSaveSettings(s: StoreSettings): Promise<StoreSettings> { saveJSON(STORAGE_KEYS.storeSettings, s); return { ...s }; }
+export async function adminGetSettings(): Promise<StoreSettings> { return getSettings(); }
+
+export async function adminSaveSettings(s: StoreSettings): Promise<StoreSettings> {
+  const row = {
+    id: 1,
+    store_name: s.storeName,
+    store_tagline: s.storeTagline,
+    contact_mode: s.contactMode,
+    phone: s.phone,
+    whatsapp: s.whatsapp,
+    contact_button_text: s.contactButtonText,
+  };
+  const { error } = await supabase.from('store_settings').upsert(row);
+  if (error) throw error;
+  return { ...s };
+}
 
 export async function adminGetStats() {
-  const products = getProducts();
-  const cats = getCategoriesData();
+  const [products, cats] = await Promise.all([getProducts(), getCategoriesData()]);
   return {
     totalProducts: products.length,
     activeProducts: products.filter((p) => p.active).length,
@@ -93,4 +180,4 @@ export async function adminGetStats() {
   };
 }
 
-export function newId() { return 'p' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+export function newId() { return crypto.randomUUID(); }

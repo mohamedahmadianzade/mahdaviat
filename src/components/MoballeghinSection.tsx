@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, User, Phone, CreditCard, MapPin, CheckCircle2, ArrowRight, Loader2, Search, Filter, Table2, Plus, X, Pencil, Trash2, ArrowLeft } from 'lucide-react';
+import { Mic, User, Phone, CreditCard, MapPin, ArrowRight, Loader2, Search, Filter, Table2, Plus, X, Eye } from 'lucide-react';
 import type { MaritalStatus, EducationLevel, Moballagh } from '../types';
 import { maritalStatusLabels, educationLevelLabels, birthYears, emptyMoballagh } from '../types';
-import { registerMoballagh, getMoballeghin, adminSaveMoballagh, adminDeleteMoballagh } from '../lib/moballeghinApi';
+import { registerMoballagh, getMoballeghin } from '../lib/moballeghinApi';
 
 interface MoballeghinSectionProps {
   onBack: () => void;
 }
 
 type FormState = Omit<Moballagh, 'id' | 'registeredAt'>;
-type View = 'form' | 'list' | 'detail';
+type View = 'form' | 'list';
 
 export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) {
   const [view, setView] = useState<View>('list');
@@ -19,18 +19,12 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [list, setList] = useState<Moballagh[]>([]);
   const [listLoading, setListLoading] = useState(false);
-  // Filters
   const [search, setSearch] = useState('');
   const [filterEducation, setFilterEducation] = useState('');
   const [filterMarital, setFilterMarital] = useState('');
   const [filterBirthYear, setFilterBirthYear] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  // Detail/edit
-  const [selected, setSelected] = useState<Moballagh | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [detailSearch, setDetailSearch] = useState('');
+  const [detailMember, setDetailMember] = useState<Moballagh | null>(null);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -97,42 +91,6 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
 
   const activeFilterCount = [filterEducation, filterMarital, filterBirthYear].filter(Boolean).length;
 
-  const openDetail = (m: Moballagh) => {
-    setSelected({ ...m });
-    setDetailSearch('');
-    setView('detail');
-  };
-
-  const handleDetailSave = async () => {
-    if (!selected) return;
-    setSaving(true);
-    try {
-      await adminSaveMoballagh(selected);
-      await loadList();
-      setView('list');
-      setSelected(null);
-    } catch {
-      // ignore
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    try {
-      await adminDeleteMoballagh(deleteId);
-      await loadList();
-    } finally {
-      setDeleteId(null);
-      if (view === 'detail') { setView('list'); setSelected(null); }
-    }
-  };
-
-  const setDetail = <K extends keyof Moballagh>(key: K, value: Moballagh[K]) => {
-    setSelected((prev) => prev ? { ...prev, [key]: value } : prev);
-  };
-
   return (
     <div>
       {/* Header */}
@@ -178,133 +136,7 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
       </div>
 
       <AnimatePresence mode="wait">
-        {view === 'detail' ? (
-          <motion.div key="detail" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-5">
-            {/* Detail header */}
-            <div className="flex items-center justify-between">
-              <button onClick={() => { setView('list'); setSelected(null); }} className="btn-ghost text-xs">
-                <ArrowRight className="h-4 w-4" />
-                بازگشت به لیست
-              </button>
-              {selected && (
-                <button onClick={() => setDeleteId(selected.id)} className="btn-ghost text-xs text-rose-600 hover:bg-rose-50 hover:border-rose-200">
-                  <Trash2 className="h-4 w-4" />
-                  حذف مبلغ
-                </button>
-              )}
-            </div>
-
-            {selected ? (
-              <>
-                {/* Avatar + name */}
-                <div className="flex items-center gap-4 rounded-2xl border border-emerald/10 bg-white/60 p-5">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-soft text-xl font-bold text-emerald-deep">
-                    {selected.fullName.charAt(0) || '؟'}
-                  </div>
-                  <div>
-                    <h3 className="font-display text-lg font-bold text-emerald-deep">{selected.fullName || 'بدون نام'}</h3>
-                    <p className="text-xs text-muted">{selected.fatherName ? `فرزند ${selected.fatherName}` : ''}</p>
-                  </div>
-                </div>
-
-                {/* Edit form */}
-                <fieldset className="rounded-2xl border border-emerald/10 bg-white/60 p-5">
-                  <legend className="flex items-center gap-2 px-3 font-display text-sm font-bold text-emerald-deep">
-                    <User className="h-4 w-4" />
-                    اطلاعات شخصی
-                  </legend>
-                  <div className="grid grid-cols-1 gap-4 pt-3 sm:grid-cols-2">
-                    <Field label="نام و نام خانوادگی">
-                      <input className="input-field" value={selected.fullName} onChange={(e) => setDetail('fullName', e.target.value)} />
-                    </Field>
-                    <Field label="نام پدر">
-                      <input className="input-field" value={selected.fatherName} onChange={(e) => setDetail('fatherName', e.target.value)} />
-                    </Field>
-                    <Field label="شماره شناسنامه">
-                      <input className="input-field" value={selected.idCardNumber} onChange={(e) => setDetail('idCardNumber', e.target.value)} inputMode="numeric" />
-                    </Field>
-                    <Field label="کد ملی">
-                      <input className="input-field" value={selected.nationalCode} onChange={(e) => setDetail('nationalCode', e.target.value)} inputMode="numeric" maxLength={10} />
-                    </Field>
-                  </div>
-                </fieldset>
-
-                <fieldset className="rounded-2xl border border-emerald/10 bg-white/60 p-5">
-                  <legend className="flex items-center gap-2 px-3 font-display text-sm font-bold text-emerald-deep">
-                    <User className="h-4 w-4" />
-                    اطلاعات تکمیلی
-                  </legend>
-                  <div className="grid grid-cols-1 gap-4 pt-3 sm:grid-cols-2">
-                    <Field label="سال تولد">
-                      <select className="input-field" value={selected.birthYear} onChange={(e) => setDetail('birthYear', e.target.value)}>
-                        <option value="">انتخاب کنید</option>
-                        {birthYears.map((y) => (
-                          <option key={y} value={String(y)}>{y.toLocaleString('fa-IR')}</option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="محل تولد">
-                      <input className="input-field" value={selected.birthPlace} onChange={(e) => setDetail('birthPlace', e.target.value)} />
-                    </Field>
-                    <Field label="سطح تحصیلات">
-                      <select className="input-field" value={selected.educationLevel} onChange={(e) => setDetail('educationLevel', e.target.value as EducationLevel | '')}>
-                        <option value="">انتخاب کنید</option>
-                        {(Object.keys(educationLevelLabels) as EducationLevel[]).map((k) => (
-                          <option key={k} value={k}>{educationLevelLabels[k]}</option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="وضعیت تأهل">
-                      <select className="input-field" value={selected.maritalStatus} onChange={(e) => setDetail('maritalStatus', e.target.value as MaritalStatus | '')}>
-                        <option value="">انتخاب کنید</option>
-                        {(Object.keys(maritalStatusLabels) as MaritalStatus[]).map((k) => (
-                          <option key={k} value={k}>{maritalStatusLabels[k]}</option>
-                        ))}
-                      </select>
-                    </Field>
-                  </div>
-                </fieldset>
-
-                <fieldset className="rounded-2xl border border-emerald/10 bg-white/60 p-5">
-                  <legend className="flex items-center gap-2 px-3 font-display text-sm font-bold text-emerald-deep">
-                    <Phone className="h-4 w-4" />
-                    اطلاعات تماس و بانکی
-                  </legend>
-                  <div className="grid grid-cols-1 gap-4 pt-3 sm:grid-cols-2">
-                    <Field label="تلفن همراه">
-                      <input className="input-field" value={selected.phone} onChange={(e) => setDetail('phone', e.target.value)} inputMode="tel" />
-                    </Field>
-                    <Field label="شماره حساب بانکی">
-                      <input className="input-field" value={selected.bankAccountNumber} onChange={(e) => setDetail('bankAccountNumber', e.target.value)} />
-                    </Field>
-                    <div className="sm:col-span-2">
-                      <Field label="آدرس">
-                        <textarea className="input-field min-h-[70px] resize-y" value={selected.address} onChange={(e) => setDetail('address', e.target.value)} />
-                      </Field>
-                    </div>
-                  </div>
-                </fieldset>
-
-                <label className="flex items-center gap-2 text-sm text-muted">
-                  <input type="checkbox" checked={selected.active} onChange={(e) => setDetail('active', e.target.checked)} className="h-4 w-4 accent-emerald" />
-                  فعال
-                </label>
-
-                <div className="flex justify-end gap-3">
-                  <button onClick={() => { setView('list'); setSelected(null); }} className="btn-ghost">انصراف</button>
-                  <button onClick={handleDetailSave} disabled={saving} className="btn-primary">
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'ذخیره تغییرات'}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="space-y-4">
-                <div className="skeleton h-20 w-full rounded-2xl" />
-                <div className="skeleton h-64 w-full rounded-2xl" />
-              </div>
-            )}
-          </motion.div>
-        ) : view === 'list' ? (
+        {view === 'list' ? (
           <motion.div
             key="list"
             initial={{ opacity: 0 }}
@@ -434,14 +266,13 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
                         <td className="px-4 py-3 text-muted">{m.educationLevel ? educationLevelLabels[m.educationLevel as EducationLevel] : '—'}</td>
                         <td className="px-4 py-3 text-muted">{m.maritalStatus ? maritalStatusLabels[m.maritalStatus as MaritalStatus] : '—'}</td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => openDetail(m)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-emerald-soft hover:text-emerald-deep" title="ویرایش">
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button onClick={() => setDeleteId(m.id)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-rose-50 hover:text-rose-600" title="حذف">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => setDetailMember(m)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-emerald-soft hover:text-emerald-deep"
+                            title="مشاهده"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -569,31 +400,61 @@ export default function MoballeghinSection({ onBack }: MoballeghinSectionProps) 
         )}
       </AnimatePresence>
 
-      {/* Delete confirmation */}
+      {/* Detail modal */}
       <AnimatePresence>
-        {deleteId && (
+        {detailMember && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setDeleteId(null)}
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              onClick={() => setDetailMember(null)}
+              className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-sm -translate-y-1/2 rounded-2xl border border-emerald/10 bg-white p-6 text-center shadow-2xl"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-x-4 top-1/2 z-50 mx-auto max-h-[85vh] max-w-lg -translate-y-1/2 overflow-y-auto rounded-2xl bg-white shadow-card"
             >
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-600">
-                <Trash2 className="h-7 w-7" />
+              <div className="sticky top-0 flex items-center justify-between border-b border-emerald/10 bg-white px-6 py-4">
+                <h4 className="font-display text-lg font-bold text-emerald-deep">جزئیات مبلغ</h4>
+                <button onClick={() => setDetailMember(null)} className="rounded-lg p-2 text-muted transition-colors hover:bg-emerald-soft">
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-              <h4 className="mb-2 font-display text-base font-bold text-ink">حذف مبلغ</h4>
-              <p className="mb-5 text-sm text-muted">آیا از حذف این مبلغ اطمینان دارید؟ این عملیات قابل بازگشت نیست.</p>
-              <div className="flex justify-center gap-3">
-                <button onClick={() => setDeleteId(null)} className="btn-ghost">انصراف</button>
-                <button onClick={handleDelete} className="btn-primary bg-rose-600 hover:bg-rose-700">حذف</button>
+
+              <div className="space-y-5 p-6">
+                {/* Avatar + name */}
+                <div className="flex items-center gap-4 rounded-2xl border border-emerald/10 bg-emerald-soft/20 p-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-soft text-xl font-bold text-emerald-deep">
+                    {detailMember.fullName.charAt(0) || '؟'}
+                  </div>
+                  <div>
+                    <h3 className="font-display text-lg font-bold text-emerald-deep">{detailMember.fullName || 'بدون نام'}</h3>
+                    <p className="text-xs text-muted">{detailMember.fatherName ? `فرزند ${detailMember.fatherName}` : ''}</p>
+                    <span className={`mt-1 inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] ${detailMember.active ? 'bg-emerald-soft text-emerald-deep' : 'bg-rose-50 text-rose-500'}`}>
+                      {detailMember.active ? 'فعال' : 'غیرفعال'}
+                    </span>
+                  </div>
+                </div>
+
+                <DetailField label="شماره شناسنامه" value={detailMember.idCardNumber} />
+                <DetailField label="کد ملی" value={detailMember.nationalCode} ltr />
+                <DetailField label="سال تولد" value={detailMember.birthYear ? Number(detailMember.birthYear).toLocaleString('fa-IR') : ''} />
+                <DetailField label="محل تولد" value={detailMember.birthPlace} />
+                <DetailField label="سطح تحصیلات" value={detailMember.educationLevel ? educationLevelLabels[detailMember.educationLevel as EducationLevel] : ''} />
+                <DetailField label="وضعیت تأهل" value={detailMember.maritalStatus ? maritalStatusLabels[detailMember.maritalStatus as MaritalStatus] : ''} />
+                <DetailField label="تلفن همراه" value={detailMember.phone} ltr />
+                <DetailField label="شماره حساب بانکی" value={detailMember.bankAccountNumber} ltr />
+                <DetailField label="آدرس" value={detailMember.address} />
+                <DetailField label="تاریخ ثبت‌نام" value={detailMember.registeredAt ? new Date(detailMember.registeredAt).toLocaleDateString('fa-IR') : ''} />
+              </div>
+
+              <div className="sticky bottom-0 flex items-center justify-end border-t border-emerald/10 bg-white px-6 py-4">
+                <button onClick={() => setDetailMember(null)} className="btn-ghost">بستن</button>
               </div>
             </motion.div>
           </>
@@ -611,6 +472,15 @@ function Field({ label, required, error, children }: { label: string; required?:
       </label>
       {children}
       {error && <p className="mt-1 text-xs text-rose-500">{error}</p>}
+    </div>
+  );
+}
+
+function DetailField({ label, value, ltr }: { label: string; value: string; ltr?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-emerald/5 pb-2">
+      <span className="text-xs text-muted">{label}</span>
+      <span className={`text-sm font-medium text-ink ${ltr ? 'dir-ltr' : ''}`} dir={ltr ? 'ltr' : 'rtl'}>{value || '—'}</span>
     </div>
   );
 }

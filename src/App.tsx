@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, BookOpen, SearchX, Network, Mic } from 'lucide-react';
+import { ShoppingBag, BookOpen, SearchX, Network, Home } from 'lucide-react';
 import type { Book, SearchFilters } from './types';
 import { emptyFilters } from './types';
-import { searchBooks, getBookById, getSimilarBooks, getFilterOptions, availabilityLabels, bookTypeLabels, availabilityStyles } from './lib/api';
-import type { AdminSection } from './components/admin/AdminLayout';
+import { searchBooks, getBookById, getSimilarBooks, getFilterOptions, getFilterOptionsAsync, availabilityLabels, bookTypeLabels, availabilityStyles } from './lib/api';
 import AdminLayout from './components/admin/AdminLayout';
 import LandingPage from './components/LandingPage';
 import SearchBox from './components/SearchBox';
@@ -13,13 +12,13 @@ import BookCardSkeleton from './components/BookCardSkeleton';
 import BookDetails from './components/BookDetails';
 import StoreSection from './components/StoreSection';
 import OrgSection from './components/OrgSection';
-import MoballeghinSection from './components/MoballeghinSection';
 import OrgPersonProfile from './components/org/OrgPersonProfile';
 import LoginPage from './components/LoginPage';
 import { getOrgMemberById, getActiveOrgUnits } from './lib/orgApi';
 import type { OrgMember, OrgUnit } from './types';
+import type { AdminPermissions } from './lib/adminUsersApi';
 
-type RootSection = 'landing' | 'library' | 'store' | 'organization' | 'moballeghin' | 'org-person' | 'admin';
+type RootSection = 'landing' | 'library' | 'store' | 'organization' | 'org-person' | 'admin';
 type LibraryView = 'home' | 'results' | 'details';
 
 function useAdminRoute(): boolean { return window.location.pathname.startsWith('/admin'); }
@@ -35,7 +34,7 @@ function LibrarySection() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [filterOptions, setFilterOptions] = useState(getFilterOptions());
 
-  useEffect(() => { setFilterOptions(getFilterOptions()); }, []);
+  useEffect(() => { getFilterOptionsAsync().then(setFilterOptions).catch(() => {}); }, []);
 
   const handleSearch = useCallback(async (f: SearchFilters) => {
     setFilters(f); setView('results'); setLoading(true);
@@ -104,6 +103,7 @@ export default function App() {
   const isAdmin = useAdminRoute();
   const [section, setSection] = useState<RootSection>(isAdmin ? 'admin' : 'landing');
   const [authed, setAuthed] = useState(false);
+  const [adminPermissions, setAdminPermissions] = useState<AdminPermissions | null>(null);
   const [orgPerson, setOrgPerson] = useState<OrgMember | null>(null);
   const [orgUnit, setOrgUnit] = useState<OrgUnit | null>(null);
   const [orgPersonLoading, setOrgPersonLoading] = useState(false);
@@ -114,7 +114,7 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  const backToSite = () => { history.pushState(null, '', '/'); setSection('landing'); setAuthed(false); };
+  const backToSite = () => { history.pushState(null, '', '/'); setSection('landing'); setAuthed(false); setAdminPermissions(null); };
 
   const openOrgPerson = useCallback(async (id: string) => {
     setOrgPersonLoading(true); setSection('org-person');
@@ -132,8 +132,8 @@ export default function App() {
 
   const backToOrg = () => { setSection('organization'); setOrgPerson(null); setOrgUnit(null); };
 
-  if (section === 'admin' && !authed) return <LoginPage onLogin={() => setAuthed(true)} onBack={backToSite} />;
-  if (section === 'admin' && authed) return <AdminLayout onBackToSite={backToSite} />;
+  if (section === 'admin' && !authed) return <LoginPage onLogin={(perms) => { setAuthed(true); setAdminPermissions(perms); }} onBack={backToSite} />;
+  if (section === 'admin' && authed) return <AdminLayout onBackToSite={backToSite} permissions={adminPermissions} />;
 
   return (
     <div
@@ -144,10 +144,10 @@ export default function App() {
       <nav className="sticky top-0 z-30 border-b border-emerald/20 bg-white/95 shadow-soft backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 py-2 sm:gap-4 sm:px-6">
           {[
+            { key: 'landing' as const, label: 'صفحه اصلی', icon: <Home className="h-4 w-4" /> },
             { key: 'library' as const, label: 'کتابخانه دیجیتال', icon: <BookOpen className="h-4 w-4" /> },
             { key: 'store' as const, label: 'فروشگاه', icon: <ShoppingBag className="h-4 w-4" /> },
             { key: 'organization' as const, label: 'ساختار سازمانی', icon: <Network className="h-4 w-4" /> },
-            { key: 'moballeghin' as const, label: 'مبلغین', icon: <Mic className="h-4 w-4" /> },
           ].map((item) => {
             const active = section === item.key || (item.key === 'organization' && section === 'org-person');
             return (
@@ -194,11 +194,6 @@ export default function App() {
               {section === 'store' && (
                 <motion.div key="store" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
                   <StoreSection onBack={() => setSection('landing')} />
-                </motion.div>
-              )}
-              {section === 'moballeghin' && (
-                <motion.div key="moballeghin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-                  <MoballeghinSection onBack={() => setSection('landing')} />
                 </motion.div>
               )}
               {section === 'organization' && (

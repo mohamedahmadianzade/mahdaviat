@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { Library, ShoppingBag, Network, Mic, ArrowLeft } from 'lucide-react';
+import { Library, ShoppingBag, Network, ArrowLeft } from 'lucide-react';
 
-type Section = 'library' | 'store' | 'organization' | 'moballeghin';
+type Section = 'library' | 'store' | 'organization';
 
 interface LandingPageProps {
   onSelect: (section: Section) => void;
@@ -39,14 +39,6 @@ const cards: {
     gradient: 'from-teal to-teal-dark',
     iconBg: 'bg-teal/10 text-teal',
   },
-  {
-    key: 'moballeghin',
-    title: 'مبلغین',
-    subtitle: 'فرم ثبت‌نام و مدیریت مبلغین بنیاد مهدویت خراسان رضوی',
-    icon: Mic,
-    gradient: 'from-emerald-light to-emerald',
-    iconBg: 'bg-emerald-soft text-emerald-deep',
-  },
 ];
 
 export default function LandingPage({ onSelect }: LandingPageProps) {
@@ -72,7 +64,7 @@ export default function LandingPage({ onSelect }: LandingPageProps) {
       </motion.div>
 
       {/* Cards */}
-      <div className="grid w-full max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid w-full max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card, index) => {
           const Icon = card.icon;
           return (

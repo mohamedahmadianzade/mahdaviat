@@ -1,15 +1,125 @@
 import type { OrgUnit, OrgMember, OrgTreeNode, OrgSearchFilters } from '../types';
-import { defaultOrgUnits, defaultOrgMembers } from '../data/organization';
-import { loadJSON, saveJSON, STORAGE_KEYS } from './storage';
+import { supabase } from './supabaseClient';
 
-const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 const matches = (field: string | undefined, term: string) => !term || (!!field && normalize(field).includes(normalize(term)));
 
-function getUnits(): OrgUnit[] { return loadJSON<OrgUnit[]>(STORAGE_KEYS.orgUnits, defaultOrgUnits); }
-function getMembers(): OrgMember[] { return loadJSON<OrgMember[]>(STORAGE_KEYS.orgMembers, defaultOrgMembers); }
+type OrgUnitRow = {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  order: number;
+  active: boolean;
+};
 
-export function newId() { return 'm' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+type OrgMemberRow = {
+  id: string;
+  parent_id: string | null;
+  name: string;
+  position: string;
+  department: string;
+  unit_id: string | null;
+  management_level: string;
+  image: string;
+  bio: string;
+  responsibilities: string[];
+  education: string[];
+  experience: string[];
+  skills: string[];
+  research_areas: string[];
+  publications: string[];
+  projects: string[];
+  certificates: string[];
+  awards: string[];
+  phone: string;
+  email: string;
+  office: string;
+  social_links: { label: string; url: string }[];
+  gallery: string[];
+  documents: string[];
+  order: number;
+  active: boolean;
+};
+
+const fromUnitRow = (r: OrgUnitRow): OrgUnit => ({
+  id: r.id, name: r.name, parentId: r.parent_id, order: r.order, active: r.active,
+});
+
+const toUnitRow = (u: OrgUnit) => ({
+  id: u.id, name: u.name, parent_id: u.parentId, order: u.order, active: u.active,
+});
+
+const fromMemberRow = (r: OrgMemberRow): OrgMember => ({
+  id: r.id,
+  parentId: r.parent_id,
+  name: r.name,
+  position: r.position,
+  department: r.department,
+  unitId: r.unit_id ?? '',
+  managementLevel: r.management_level as OrgMember['managementLevel'],
+  image: r.image,
+  bio: r.bio,
+  responsibilities: r.responsibilities ?? [],
+  education: r.education ?? [],
+  experience: r.experience ?? [],
+  skills: r.skills ?? [],
+  researchAreas: r.research_areas ?? [],
+  publications: r.publications ?? [],
+  projects: r.projects ?? [],
+  certificates: r.certificates ?? [],
+  awards: r.awards ?? [],
+  phone: r.phone,
+  email: r.email,
+  office: r.office,
+  socialLinks: r.social_links ?? [],
+  gallery: r.gallery ?? [],
+  documents: r.documents ?? [],
+  order: r.order,
+  active: r.active,
+});
+
+const toMemberRow = (m: OrgMember) => ({
+  id: m.id,
+  parent_id: m.parentId,
+  name: m.name,
+  position: m.position,
+  department: m.department,
+  unit_id: m.unitId || null,
+  management_level: m.managementLevel,
+  image: m.image,
+  bio: m.bio,
+  responsibilities: m.responsibilities,
+  education: m.education,
+  experience: m.experience,
+  skills: m.skills,
+  research_areas: m.researchAreas,
+  publications: m.publications,
+  projects: m.projects,
+  certificates: m.certificates,
+  awards: m.awards,
+  phone: m.phone,
+  email: m.email,
+  office: m.office,
+  social_links: m.socialLinks,
+  gallery: m.gallery,
+  documents: m.documents,
+  order: m.order,
+  active: m.active,
+});
+
+export function newId() { return crypto.randomUUID(); }
+
+async function getUnits(): Promise<OrgUnit[]> {
+  const { data, error } = await supabase.from('org_units').select('*');
+  if (error) throw error;
+  return (data as OrgUnitRow[]).map(fromUnitRow);
+}
+
+async function getMembers(): Promise<OrgMember[]> {
+  const { data, error } = await supabase.from('org_members').select('*');
+  if (error) throw error;
+  return (data as OrgMemberRow[]).map(fromMemberRow);
+}
 
 export function buildOrgTree(members: OrgMember[]): OrgTreeNode[] {
   const active = members.filter((m) => m.active);
@@ -70,35 +180,37 @@ export function getDescendantIds(members: OrgMember[], id: string): Set<string> 
 }
 
 export async function getOrgTree(): Promise<OrgTreeNode[]> {
-  await delay(300);
-  return buildOrgTree(getMembers());
+  const members = await getMembers();
+  return buildOrgTree(members);
 }
 
 export async function getOrgMemberById(id: string): Promise<OrgMember | null> {
-  await delay(200);
-  return getMembers().find((m) => m.id === id) ?? null;
+  const { data, error } = await supabase.from('org_members').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data ? fromMemberRow(data as OrgMemberRow) : null;
 }
 
 export async function getOrgMembers(): Promise<OrgMember[]> {
-  await delay(150);
-  return [...getMembers()].sort((a, b) => a.order - b.order);
+  const members = await getMembers();
+  return [...members].sort((a, b) => a.order - b.order);
 }
 
 export async function getOrgUnits(): Promise<OrgUnit[]> {
-  await delay(100);
-  return [...getUnits()].sort((a, b) => a.order - b.order);
+  const units = await getUnits();
+  return [...units].sort((a, b) => a.order - b.order);
 }
 
 export async function getActiveOrgUnits(): Promise<OrgUnit[]> {
-  await delay(100);
-  return getUnits().filter((u) => u.active).sort((a, b) => a.order - b.order);
+  const units = await getUnits();
+  return units.filter((u) => u.active).sort((a, b) => a.order - b.order);
 }
 
-export function getOrgFilterOptions(members: OrgMember[]) {
+export async function getOrgFilterOptions(members: OrgMember[]) {
+  const units = await getOrgUnits();
   return {
     departments: [...new Set(members.map((m) => m.department))].sort(),
     managementLevels: ['executive', 'deputy', 'department', 'unit', 'staff'],
-    units: getUnits().filter((u) => u.active).sort((a, b) => a.order - b.order),
+    units: units.filter((u) => u.active).sort((a, b) => a.order - b.order),
   };
 }
 
@@ -119,43 +231,39 @@ export function searchOrgMembers(members: OrgMember[], filters: OrgSearchFilters
 // ─── Admin CRUD ──────────────────────────────────────────────────────────────
 
 export async function adminGetOrgUnits(): Promise<OrgUnit[]> {
-  return [...getUnits()].sort((a, b) => a.order - b.order);
+  const units = await getUnits();
+  return [...units].sort((a, b) => a.order - b.order);
 }
 
 export async function adminSaveOrgUnit(unit: OrgUnit): Promise<OrgUnit> {
-  const units = getUnits();
-  const idx = units.findIndex((u) => u.id === unit.id);
-  if (idx >= 0) units[idx] = unit; else units.push(unit);
-  saveJSON(STORAGE_KEYS.orgUnits, units);
-  return { ...unit };
+  const { data, error } = await supabase.from('org_units').upsert(toUnitRow(unit)).select('*').maybeSingle();
+  if (error) throw error;
+  return data ? fromUnitRow(data as OrgUnitRow) : unit;
 }
 
 export async function adminDeleteOrgUnit(id: string): Promise<void> {
-  saveJSON(STORAGE_KEYS.orgUnits, getUnits().filter((u) => u.id !== id));
-  const members = getMembers().map((m) => (m.unitId === id ? { ...m, unitId: '' } : m));
-  saveJSON(STORAGE_KEYS.orgMembers, members);
+  const { error } = await supabase.from('org_units').delete().eq('id', id);
+  if (error) throw error;
 }
 
 export async function adminGetOrgMembers(): Promise<OrgMember[]> {
-  return [...getMembers()].sort((a, b) => a.order - b.order);
+  const members = await getMembers();
+  return [...members].sort((a, b) => a.order - b.order);
 }
 
 export async function adminSaveOrgMember(member: OrgMember): Promise<OrgMember> {
-  const members = getMembers();
-  const idx = members.findIndex((m) => m.id === member.id);
-  if (idx >= 0) members[idx] = member; else members.push(member);
-  saveJSON(STORAGE_KEYS.orgMembers, members);
-  return { ...member };
+  const { data, error } = await supabase.from('org_members').upsert(toMemberRow(member)).select('*').maybeSingle();
+  if (error) throw error;
+  return data ? fromMemberRow(data as OrgMemberRow) : member;
 }
 
 export async function adminDeleteOrgMember(id: string): Promise<void> {
-  const members = getMembers().filter((m) => m.id !== id).map((m) => (m.parentId === id ? { ...m, parentId: null } : m));
-  saveJSON(STORAGE_KEYS.orgMembers, members);
+  const { error } = await supabase.from('org_members').delete().eq('id', id);
+  if (error) throw error;
 }
 
 export async function adminGetOrgStats() {
-  const members = getMembers();
-  const units = getUnits();
+  const [members, units] = await Promise.all([getMembers(), getUnits()]);
   return {
     totalMembers: members.length,
     activeMembers: members.filter((m) => m.active).length,
