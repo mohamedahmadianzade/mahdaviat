@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -11,9 +11,6 @@ import {
   Mic,
   ArrowRight,
   Shield,
-  CalendarDays,
-  ShoppingCart,
-  UserCog,
 } from 'lucide-react';
 import AdminDashboard from './AdminDashboard';
 import AdminBooks from './AdminBooks';
@@ -23,10 +20,6 @@ import AdminSettings from './AdminSettings';
 import AdminOrgUnits from './AdminOrgUnits';
 import AdminOrgMembers from './AdminOrgMembers';
 import AdminMoballeghin from './AdminMoballeghin';
-import AdminActivities from './AdminActivities';
-import AdminOrders from './AdminOrders';
-import AdminUsers from './AdminUsers';
-import type { AdminPermissions } from '../../lib/adminUsersApi';
 
 export type AdminSection =
   | 'dashboard'
@@ -36,72 +29,37 @@ export type AdminSection =
   | 'settings'
   | 'org-units'
   | 'org-members'
-  | 'moballeghin'
-  | 'activities'
-  | 'orders'
-  | 'users';
+  | 'moballeghin';
 
 interface AdminLayoutProps {
   onBackToSite: () => void;
-  permissions: AdminPermissions | null;
 }
 
 interface SidebarItem {
   key: AdminSection;
   label: string;
   icon: typeof LayoutDashboard;
-  group: 'store' | 'library' | 'organization' | 'moballeghin' | 'admin' | 'dashboard';
 }
 
 const sidebarItems: SidebarItem[] = [
-  { key: 'dashboard', label: 'داشبورد', icon: LayoutDashboard, group: 'dashboard' },
-  { key: 'books', label: 'کتاب‌ها', icon: BookOpen, group: 'library' },
-  { key: 'products', label: 'محصولات', icon: Package, group: 'store' },
-  { key: 'categories', label: 'دسته‌بندی محصولات', icon: FolderTree, group: 'store' },
-  { key: 'settings', label: 'تنظیمات فروشگاه', icon: Settings, group: 'store' },
-  { key: 'orders', label: 'سفارش‌های فروشگاه', icon: ShoppingCart, group: 'store' },
-  { key: 'org-units', label: 'واحدهای سازمانی', icon: Network, group: 'organization' },
-  { key: 'org-members', label: 'اعضای سازمان', icon: Users, group: 'organization' },
-  { key: 'moballeghin', label: 'مبلغین', icon: Mic, group: 'moballeghin' },
-  { key: 'activities', label: 'فعالیت‌های تبلیغی', icon: CalendarDays, group: 'moballeghin' },
-  { key: 'users', label: 'کاربران مدیریت', icon: UserCog, group: 'admin' },
+  { key: 'dashboard', label: 'داشبورد', icon: LayoutDashboard },
+  { key: 'books', label: 'کتاب‌ها', icon: BookOpen },
+  { key: 'products', label: 'محصولات', icon: Package },
+  { key: 'categories', label: 'دسته‌بندی محصولات', icon: FolderTree },
+  { key: 'settings', label: 'تنظیمات فروشگاه', icon: Settings },
+  { key: 'org-units', label: 'واحدهای سازمانی', icon: Network },
+  { key: 'org-members', label: 'اعضای سازمان', icon: Users },
+  { key: 'moballeghin', label: 'مبلغین', icon: Mic },
 ];
 
-function hasPermission(item: SidebarItem, perms: AdminPermissions | null): boolean {
-  if (!perms) return true;
-  if (perms.is_super_admin) return true;
-  switch (item.group) {
-    case 'dashboard': return true;
-    case 'store': return perms.can_access_store;
-    case 'library': return perms.can_access_library;
-    case 'organization': return perms.can_access_organization;
-    case 'moballeghin': return perms.can_access_moballeghin;
-    case 'admin': return perms.is_super_admin;
-    default: return false;
-  }
-}
-
-export default function AdminLayout({ onBackToSite, permissions }: AdminLayoutProps) {
+export default function AdminLayout({ onBackToSite }: AdminLayoutProps) {
   const [section, setSection] = useState<AdminSection>('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [activitiesMissionaryFilter, setActivitiesMissionaryFilter] = useState<string | undefined>(undefined);
 
-  const visibleItems = useMemo(
-    () => sidebarItems.filter((item) => hasPermission(item, permissions)),
-    [permissions],
-  );
-
-  const currentItem = visibleItems.find((i) => i.key === section) ?? visibleItems[0];
+  const currentItem = sidebarItems.find((i) => i.key === section);
 
   const selectSection = (s: AdminSection) => {
     setSection(s);
-    setMobileOpen(false);
-    if (s !== 'activities') setActivitiesMissionaryFilter(undefined);
-  };
-
-  const openActivitiesForMissionary = (missionaryId: string) => {
-    setActivitiesMissionaryFilter(missionaryId);
-    setSection('activities');
     setMobileOpen(false);
   };
 
@@ -153,7 +111,7 @@ export default function AdminLayout({ onBackToSite, permissions }: AdminLayoutPr
 
           {/* Nav */}
           <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-4">
-            {visibleItems.map((item) => {
+            {sidebarItems.map((item) => {
               const Icon = item.icon;
               const active = section === item.key;
               return (
@@ -224,10 +182,7 @@ export default function AdminLayout({ onBackToSite, permissions }: AdminLayoutPr
               {section === 'settings' && <AdminSettings />}
               {section === 'org-units' && <AdminOrgUnits />}
               {section === 'org-members' && <AdminOrgMembers />}
-              {section === 'moballeghin' && <AdminMoballeghin onOpenActivities={openActivitiesForMissionary} />}
-              {section === 'activities' && <AdminActivities initialMissionaryFilter={activitiesMissionaryFilter} />}
-              {section === 'orders' && <AdminOrders />}
-              {section === 'users' && <AdminUsers />}
+              {section === 'moballeghin' && <AdminMoballeghin />}
             </motion.div>
           </AnimatePresence>
         </main>

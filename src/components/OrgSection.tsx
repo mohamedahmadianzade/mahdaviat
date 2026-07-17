@@ -51,7 +51,7 @@ export default function OrgSection({ onPersonClick }: OrgSectionProps) {
         const [treeData, membersData] = await Promise.all([getOrgTree(), getOrgMembers()]);
         setTree(treeData);
         setMembers(membersData);
-        setFilterOptions(await getOrgFilterOptions(membersData));
+        setFilterOptions(getOrgFilterOptions(membersData));
         // Expand top-level nodes by default
         setExpandedIds(new Set(treeData.map((n) => n.id)));
       } catch {

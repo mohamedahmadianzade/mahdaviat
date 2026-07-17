@@ -6,6 +6,7 @@ import {
   ShoppingBag,
   X,
   Phone,
+  MessageCircle,
   Tag,
   Package,
 } from 'lucide-react';
@@ -97,8 +98,12 @@ export default function StoreSection({ onBack }: StoreSectionProps) {
   };
 
   const handleContact = () => {
-    if (!settings?.phone) return;
-    window.location.href = `tel:${settings.phone}`;
+    if (!settings) return;
+    if (settings.contactMode === 'whatsapp' && settings.whatsapp) {
+      window.open(`https://wa.me/${settings.whatsapp}`, '_blank');
+    } else if (settings.phone) {
+      window.location.href = `tel:${settings.phone}`;
+    }
   };
 
   return (
@@ -316,15 +321,14 @@ export default function StoreSection({ onBack }: StoreSectionProps) {
 
                     {/* Contact button */}
                     {settings && (
-                      <div className="rounded-2xl border border-emerald/15 bg-emerald-soft/50 p-4">
-                        <p className="mb-2 text-center text-sm font-medium text-emerald-deep">{settings.contactButtonText}</p>
-                        <div className="flex items-center justify-center gap-2.5">
-                          <Phone className="h-5 w-5 text-emerald" />
-                          <a href={`tel:${settings.phone}`} className="text-lg font-bold text-emerald-deep" dir="ltr">
-                            {settings.phone}
-                          </a>
-                        </div>
-                      </div>
+                      <button onClick={handleContact} className="btn-primary w-full">
+                        {settings.contactMode === 'whatsapp' ? (
+                          <MessageCircle className="h-5 w-5" />
+                        ) : (
+                          <Phone className="h-5 w-5" />
+                        )}
+                        {settings.contactButtonText}
+                      </button>
                     )}
 
                     {/* Similar products */}

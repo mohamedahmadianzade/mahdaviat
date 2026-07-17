@@ -11,8 +11,6 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Upload,
-  Loader2,
 } from 'lucide-react';
 import type { OrgMember, OrgUnit, ManagementLevel } from '../../types';
 import { managementLevelLabels } from '../../types';
@@ -24,7 +22,6 @@ import {
   emptyOrgMember,
   newId,
 } from '../../lib/orgApi';
-import { uploadImage } from '../../lib/imageUpload';
 
 export default function AdminOrgMembers() {
   const [members, setMembers] = useState<OrgMember[]>([]);
@@ -36,7 +33,6 @@ export default function AdminOrgMembers() {
   const [editing, setEditing] = useState<OrgMember | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -87,21 +83,6 @@ export default function AdminOrgMembers() {
 
   const update = (field: keyof OrgMember, value: string | number | boolean | null) => {
     setEditing((prev) => (prev ? { ...prev, [field]: value } : prev));
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingImage(true);
-    try {
-      const url = await uploadImage(file, 'org-members');
-      update('image', url);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'خطا در آپلود تصویر');
-    } finally {
-      setUploadingImage(false);
-      e.target.value = '';
-    }
   };
 
   // Available parents: exclude self and descendants to prevent cycles
@@ -326,13 +307,6 @@ export default function AdminOrgMembers() {
                   <Field label="تصویر (URL)">
                     <input className="input-field" value={editing.image} onChange={(e) => update('image', e.target.value)} placeholder="https://..." dir="ltr" />
                   </Field>
-                  <div className="sm:col-span-2">
-                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-emerald/20 bg-emerald-soft/30 px-4 py-2.5 text-sm font-medium text-emerald-deep transition-colors hover:bg-emerald-soft">
-                      {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                      {uploadingImage ? 'در حال آپلود...' : 'آپلود تصویر'}
-                      <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
-                    </label>
-                  </div>
                   <Field label="ترتیب">
                     <input type="number" className="input-field" value={editing.order} onChange={(e) => update('order', Number(e.target.value))} />
                   </Field>
