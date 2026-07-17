@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, User, ArrowRight, Shield, AlertCircle } from 'lucide-react';
-import { authenticateAdmin, extractPermissions } from '../lib/adminUsersApi';
-import type { AdminPermissions } from '../lib/adminUsersApi';
+import { Lock, User, ArrowRight, Shield } from 'lucide-react';
 
 interface LoginPageProps {
-  onLogin: (permissions: AdminPermissions) => void;
+  onLogin: () => void;
   onBack: () => void;
 }
 
@@ -13,25 +11,16 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) return;
     setSubmitting(true);
-    setError('');
-    try {
-      const user = await authenticateAdmin(username, password);
-      if (!user) {
-        setError('نام کاربری یا رمز عبور اشتباه است');
-        return;
-      }
-      onLogin(extractPermissions(user));
-    } catch {
-      setError('خطا در ارتباط با سرور. دوباره تلاش کنید.');
-    } finally {
+    // Simulate brief auth delay
+    setTimeout(() => {
       setSubmitting(false);
-    }
+      onLogin();
+    }, 400);
   };
 
   return (
@@ -42,10 +31,12 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
         transition={{ duration: 0.4 }}
         className="w-full max-w-md"
       >
+        {/* Icon */}
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald to-emerald-deep shadow-card">
           <Shield className="h-8 w-8 text-white" />
         </div>
 
+        {/* Card */}
         <div className="glass rounded-3xl p-8 shadow-card">
           <h2 className="mb-2 text-center font-display text-2xl font-bold text-emerald-deep">
             ورود به پنل مدیریت
@@ -54,14 +45,8 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
             برای دسترسی به بخش مدیریت وارد شوید
           </p>
 
-          {error && (
-            <div className="mb-4 flex items-center gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-600">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted">نام کاربری</label>
               <div className="relative">
@@ -77,6 +62,7 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
               </div>
             </div>
 
+            {/* Password */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted">رمز عبور</label>
               <div className="relative">
@@ -91,6 +77,7 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
               </div>
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
               disabled={submitting || !username || !password}
@@ -100,6 +87,7 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
             </button>
           </form>
 
+          {/* Back button */}
           <button
             onClick={onBack}
             className="mt-4 flex w-full items-center justify-center gap-1.5 text-xs text-muted transition-colors hover:text-emerald-deep"

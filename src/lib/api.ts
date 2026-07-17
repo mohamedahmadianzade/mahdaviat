@@ -1,74 +1,22 @@
 import type { Book, SearchFilters } from '../types';
-import { supabase } from './supabaseClient';
+import { defaultBooks } from '../data/books';
+import { loadJSON, saveJSON, STORAGE_KEYS } from './storage';
 
 export interface SearchResult { books: Book[]; total: number; }
 
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 const matches = (field: string | undefined, term: string) => !term || (!!field && normalize(field).includes(normalize(term)));
 const matchesAny = (arr: string[] | undefined, term: string) => !term || (!!arr?.length && arr.some((k) => normalize(k).includes(normalize(term))));
 const matchesExact = (field: string | undefined, term: string) => !term || (!!field && normalize(field) === normalize(term));
 
-type BookRow = Omit<Book, 'publicationYear' | 'keywords' | 'tags' | 'similarIds'> & {
-  publication_year: number;
-  keywords: string[];
-  tags: string[];
-  similar_ids: string[];
-  created_at: string;
-  updated_at: string;
-};
-
-const fromRow = (r: BookRow): Book => ({
-  id: r.id,
-  title: r.title,
-  author: r.author,
-  translator: r.translator ?? '',
-  publisher: r.publisher,
-  subject: r.subject,
-  category: r.category,
-  keywords: r.keywords ?? [],
-  language: r.language,
-  publicationYear: r.publication_year,
-  century: r.century,
-  collection: r.collection,
-  libraryCode: r.library_code,
-  isbn: r.isbn,
-  availability: r.availability as Book['availability'],
-  bookType: r.book_type as Book['bookType'],
-  tags: r.tags ?? [],
-  description: r.description,
-  coverColor: r.cover_color,
-  pages: r.pages,
-  similarIds: r.similar_ids ?? [],
-});
-
-const toRow = (b: Book): Omit<BookRow, 'created_at' | 'updated_at'> => ({
-  id: b.id,
-  title: b.title,
-  author: b.author,
-  translator: b.translator ?? '',
-  publisher: b.publisher,
-  subject: b.subject,
-  category: b.category,
-  keywords: b.keywords,
-  language: b.language,
-  publication_year: b.publicationYear,
-  century: b.century,
-  collection: b.collection,
-  library_code: b.libraryCode,
-  isbn: b.isbn,
-  availability: b.availability,
-  book_type: b.bookType,
-  tags: b.tags,
-  description: b.description,
-  cover_color: b.coverColor,
-  pages: b.pages,
-  similar_ids: b.similarIds ?? [],
-});
+function getBooks(): Book[] {
+  return loadJSON<Book[]>(STORAGE_KEYS.books, defaultBooks);
+}
 
 export async function searchBooks(filters: SearchFilters): Promise<SearchResult> {
-  const { data, error } = await supabase.from('books').select('*');
-  if (error) throw error;
-  const booksData = (data as BookRow[]).map(fromRow);
+  await delay(300);
+  const booksData = getBooks();
   const results = booksData.filter((b) => {
     const q = filters.query.trim();
     if (q) {
@@ -81,26 +29,17 @@ export async function searchBooks(filters: SearchFilters): Promise<SearchResult>
 }
 
 export async function getBookById(id: string): Promise<Book | null> {
-  const { data, error } = await supabase.from('books').select('*').eq('id', id).maybeSingle();
-  if (error) throw error;
-  return data ? fromRow(data as BookRow) : null;
+  await delay(200);
+  return getBooks().find((b) => b.id === id) ?? null;
 }
 
 export async function getSimilarBooks(book: Book): Promise<Book[]> {
-  const { data, error } = await supabase.from('books').select('*');
-  if (error) throw error;
-  const all = (data as BookRow[]).map(fromRow);
-  return (book.similarIds ?? []).map((id) => all.find((b) => b.id === id)).filter((b): b is Book => Boolean(b));
+  const booksData = getBooks();
+  return (book.similarIds ?? []).map((id) => booksData.find((b) => b.id === id)).filter((b): b is Book => Boolean(b));
 }
 
 export function getFilterOptions() {
-  return { subjects: [] as string[], categories: [] as string[], languages: [] as string[], centuries: [] as string[], collections: [] as string[], publishers: [] as string[], tags: [] as string[] };
-}
-
-export async function getFilterOptionsAsync() {
-  const { data, error } = await supabase.from('books').select('*');
-  if (error) throw error;
-  const booksData = (data as BookRow[]).map(fromRow);
+  const booksData = getBooks();
   return {
     subjects: [...new Set(booksData.map((b) => b.subject))].sort(),
     categories: [...new Set(booksData.map((b) => b.category))].sort(),
@@ -115,30 +54,29 @@ export async function getFilterOptionsAsync() {
 // ─── Admin CRUD ──────────────────────────────────────────────────────────────
 
 export async function adminGetBooks(): Promise<Book[]> {
-  const { data, error } = await supabase.from('books').select('*').order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data as BookRow[]).map(fromRow);
+  return [...getBooks()];
 }
 
 export async function adminSaveBook(book: Book): Promise<Book> {
-  const row = toRow(book);
-  const { data, error } = await supabase.from('books').upsert(row).select('*').maybeSingle();
-  if (error) throw error;
-  return data ? fromRow(data as BookRow) : book;
+  const books = getBooks();
+  const idx = books.findIndex((b) => b.id === book.id);
+  if (idx >= 0) books[idx] = book;
+  else books.push(book);
+  saveJSON(STORAGE_KEYS.books, books);
+  return { ...book };
 }
 
 export async function adminDeleteBook(id: string): Promise<void> {
-  const { error } = await supabase.from('books').delete().eq('id', id);
-  if (error) throw error;
+  const books = getBooks().filter((b) => b.id !== id);
+  saveJSON(STORAGE_KEYS.books, books);
 }
 
 export async function adminGetBookStats() {
-  const { count, error } = await supabase.from('books').select('*', { count: 'exact', head: true });
-  if (error) throw error;
-  return { totalBooks: count ?? 0 };
+  const books = getBooks();
+  return { totalBooks: books.length };
 }
 
-export function newId() { return crypto.randomUUID(); }
+export function newId() { return 'b' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
 export const availabilityLabels: Record<string, string> = { available: 'موجود', borrowed: 'امانت رفته', reference: 'مرجع', restored: 'در حال مرمت' };
 export const bookTypeLabels: Record<string, string> = { printed: 'چاپی', digital: 'دیجیتال', manuscript: 'نسخه خطی', lithographic: 'سنگی' };
