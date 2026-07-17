@@ -40,4 +40,5 @@ export const STORAGE_KEYS = {
   orgUnits: 'org_units',
   orgMembers: 'org_members',
   moballeghin: 'moballeghin',
+  activities: 'activities',
 } as const;

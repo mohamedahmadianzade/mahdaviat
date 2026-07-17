@@ -11,6 +11,8 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
+  Upload,
+  Loader2,
 } from 'lucide-react';
 import type { Product, ProductCategory } from '../../types';
 import {
@@ -20,6 +22,7 @@ import {
   adminGetCategories,
   newId,
 } from '../../lib/storeApi';
+import { uploadImage } from '../../lib/imageUpload';
 
 type ProductForm = Omit<Product, 'images' | 'keywords' | 'similarIds'> & {
   images: string;
@@ -64,6 +67,7 @@ export default function AdminProducts() {
   const [editing, setEditing] = useState<ProductForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -115,6 +119,27 @@ export default function AdminProducts() {
 
   const update = (field: keyof ProductForm, value: string | number | boolean) => {
     setEditing((prev) => (prev ? { ...prev, [field]: value } : prev));
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !files.length) return;
+    setUploadingImage(true);
+    try {
+      const urls: string[] = [];
+      for (const file of Array.from(files)) {
+        const url = await uploadImage(file, 'products');
+        urls.push(url);
+      }
+      const current = editing?.images ? editing.images.split(',').map((s) => s.trim()).filter(Boolean) : [];
+      const merged = [...current, ...urls].join(', ');
+      update('images', merged);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'خطا در آپلود تصویر');
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
   };
 
   return (
@@ -275,6 +300,15 @@ export default function AdminProducts() {
                 <Field label="تصاویر (URL با ویرگول جدا کنید)">
                   <input className="input-field" value={editing.images} onChange={(e) => update('images', e.target.value)} placeholder="https://..., https://..." />
                 </Field>
+
+                <div className="flex items-center gap-3">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-emerald/20 bg-emerald-soft/30 px-4 py-2.5 text-sm font-medium text-emerald-deep transition-colors hover:bg-emerald-soft">
+                    {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    {uploadingImage ? 'در حال آپلود...' : 'آپلود تصویر'}
+                    <input type="file" accept="image/*" multiple onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
+                  </label>
+                  <span className="text-xs text-muted">تصاویر قبل از آپلود فشرده می‌شوند (حداکثر ۸۰۰px، کیفیت ۷۰٪)</span>
+                </div>
 
                 <Field label="توضیح کوتاه">
                   <input className="input-field" value={editing.shortDescription} onChange={(e) => update('shortDescription', e.target.value)} />
