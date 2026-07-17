@@ -14,6 +14,10 @@ import {
   CalendarDays,
   ShoppingCart,
   UserCog,
+  ChevronDown,
+  Store,
+  Library,
+  Network as NetworkIcon,
 } from 'lucide-react';
 import AdminDashboard from './AdminDashboard';
 import AdminBooks from './AdminBooks';
@@ -53,6 +57,21 @@ interface SidebarItem {
   group: 'store' | 'library' | 'organization' | 'moballeghin' | 'admin' | 'dashboard';
 }
 
+interface SidebarGroup {
+  key: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  group: SidebarItem['group'];
+}
+
+const sidebarGroups: SidebarGroup[] = [
+  { key: 'library', label: 'کتابخانه', icon: Library, group: 'library' },
+  { key: 'store', label: 'فروشگاه', icon: Store, group: 'store' },
+  { key: 'organization', label: 'ساختار سازمانی', icon: NetworkIcon, group: 'organization' },
+  { key: 'moballeghin', label: 'مبلغین', icon: Mic, group: 'moballeghin' },
+  { key: 'admin', label: 'مدیریت سیستم', icon: Shield, group: 'admin' },
+];
+
 const sidebarItems: SidebarItem[] = [
   { key: 'dashboard', label: 'داشبورد', icon: LayoutDashboard, group: 'dashboard' },
   { key: 'books', label: 'کتاب‌ها', icon: BookOpen, group: 'library' },
@@ -85,6 +104,9 @@ export default function AdminLayout({ onBackToSite, permissions }: AdminLayoutPr
   const [section, setSection] = useState<AdminSection>('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activitiesMissionaryFilter, setActivitiesMissionaryFilter] = useState<string | undefined>(undefined);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (key: string) => setCollapsedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const visibleItems = useMemo(
     () => sidebarItems.filter((item) => hasPermission(item, permissions)),
@@ -152,8 +174,9 @@ export default function AdminLayout({ onBackToSite, permissions }: AdminLayoutPr
           </div>
 
           {/* Nav */}
-          <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-4">
-            {visibleItems.map((item) => {
+          <nav className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+            {/* Dashboard always visible at top */}
+            {visibleItems.filter((i) => i.group === 'dashboard').map((item) => {
               const Icon = item.icon;
               const active = section === item.key;
               return (
@@ -161,14 +184,65 @@ export default function AdminLayout({ onBackToSite, permissions }: AdminLayoutPr
                   key={item.key}
                   onClick={() => selectSection(item.key)}
                   className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
-                    active
-                      ? 'bg-emerald text-white shadow-soft'
-                      : 'text-muted hover:bg-emerald-soft hover:text-emerald-deep'
+                    active ? 'bg-emerald text-white shadow-soft' : 'text-muted hover:bg-emerald-soft hover:text-emerald-deep'
                   }`}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
                   <span>{item.label}</span>
                 </button>
+              );
+            })}
+
+            {/* Grouped sections */}
+            {sidebarGroups.map((grp) => {
+              const items = visibleItems.filter((i) => i.group === grp.group);
+              if (items.length === 0) return null;
+              const GroupIcon = grp.icon;
+              const isCollapsed = collapsedGroups[grp.key];
+              const hasActive = items.some((i) => i.key === section);
+              return (
+                <div key={grp.key}>
+                  <button
+                    onClick={() => toggleGroup(grp.key)}
+                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                      hasActive ? 'text-emerald-deep' : 'text-mutedLight hover:text-emerald-deep'
+                    }`}
+                  >
+                    <GroupIcon className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 text-right">{grp.label}</span>
+                    <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {!isCollapsed && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="space-y-1 pr-2 pt-1">
+                          {items.map((item) => {
+                            const Icon = item.icon;
+                            const active = section === item.key;
+                            return (
+                              <button
+                                key={item.key}
+                                onClick={() => selectSection(item.key)}
+                                className={`flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
+                                  active ? 'bg-emerald text-white shadow-soft' : 'text-muted hover:bg-emerald-soft hover:text-emerald-deep'
+                                }`}
+                              >
+                                <Icon className="h-4 w-4 shrink-0" />
+                                <span>{item.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               );
             })}
           </nav>
